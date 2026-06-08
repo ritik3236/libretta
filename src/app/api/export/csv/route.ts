@@ -17,7 +17,7 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type"); // CREDIT | DEBIT
   const currency = searchParams.get("currency");
-  const customerId = searchParams.get("customerId");
+  const customerIds = searchParams.getAll("customerId");
   const from = searchParams.get("from"); // yyyy-MM-dd
   const to = searchParams.get("to"); // yyyy-MM-dd
 
@@ -25,7 +25,8 @@ export async function GET(req: Request) {
   if (type === "CREDIT") where.direction = Direction.CREDIT;
   else if (type === "DEBIT") where.direction = Direction.DEBIT;
   if (currency) where.currency = currency;
-  if (customerId) where.customerId = customerId;
+  if (customerIds.length === 1) where.customerId = customerIds[0];
+  else if (customerIds.length > 1) where.customerId = { in: customerIds };
   if (from || to) {
     where.occurredAt = {};
     if (from) where.occurredAt.gte = new Date(`${from}T00:00:00.000`);

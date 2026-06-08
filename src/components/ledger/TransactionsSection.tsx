@@ -3,16 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { startOfDay, endOfDay, format } from "date-fns";
-import { Filter, Download } from "lucide-react";
+import { Filter, Download, Check } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DatePicker } from "./DatePicker";
 import { TransactionRow } from "./TransactionRow";
 import { cn } from "@/lib/utils";
@@ -48,7 +41,7 @@ export function TransactionsSection({
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<TypeFilter>("ALL");
   const [currency, setCurrency] = useState<string>("ALL");
-  const [customerId, setCustomerId] = useState<string>("ALL");
+  const [customerIds, setCustomerIds] = useState<string[]>([]);
   const [from, setFrom] = useState<Date | null>(null);
   const [to, setTo] = useState<Date | null>(null);
 
@@ -58,35 +51,41 @@ export function TransactionsSection({
     return entries.filter((e) => {
       if (type !== "ALL" && e.direction !== type) return false;
       if (currency !== "ALL" && e.currency !== currency) return false;
-      if (customerId !== "ALL" && e.customerId !== customerId) return false;
+      if (customerIds.length > 0 && !customerIds.includes(e.customerId)) return false;
       const ts = e.occurredAt.getTime();
       if (fromTs !== null && ts < fromTs) return false;
       if (toTs !== null && ts > toTs) return false;
       return true;
     });
-  }, [entries, type, currency, customerId, from, to]);
+  }, [entries, type, currency, customerIds, from, to]);
 
   const activeCount =
     (type !== "ALL" ? 1 : 0) +
     (currency !== "ALL" ? 1 : 0) +
-    (customerId !== "ALL" ? 1 : 0) +
+    (customerIds.length > 0 ? 1 : 0) +
     (from || to ? 1 : 0);
 
   const exportHref = useMemo(() => {
     const p = new URLSearchParams();
     if (type !== "ALL") p.set("type", type);
     if (currency !== "ALL") p.set("currency", currency);
-    if (customerId !== "ALL") p.set("customerId", customerId);
+    customerIds.forEach((id) => p.append("customerId", id));
     if (from) p.set("from", format(from, "yyyy-MM-dd"));
     if (to) p.set("to", format(to, "yyyy-MM-dd"));
     const qs = p.toString();
     return `/api/export/csv${qs ? `?${qs}` : ""}`;
-  }, [type, currency, customerId, from, to]);
+  }, [type, currency, customerIds, from, to]);
+
+  function toggleParty(id: string) {
+    setCustomerIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
 
   function reset() {
     setType("ALL");
     setCurrency("ALL");
-    setCustomerId("ALL");
+    setCustomerIds([]);
     setFrom(null);
     setTo(null);
   }
@@ -195,20 +194,51 @@ export function TransactionsSection({
 
             {customers.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-semibold text-muted-foreground">Party</p>
-                <Select value={customerId} onValueChange={setCustomerId}>
-                  <SelectTrigger className="h-11 text-sm">
-                    <SelectValue placeholder="All parties" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ALL">All parties</SelectItem>
-                    {customers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="mb-2 flex items-center justify-between">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Parties{customerIds.length > 0 ? ` · ${customerIds.length}` : ""}
+                  </p>
+                  {customerIds.length > 0 && (
+                    <button
+                      onClick={() => setCustomerIds([])}
+                      className="text-xs font-semibold text-primary"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-44 divide-y divide-border/60 overflow-y-auto rounded-xl border">
+                  {customers.map((c) => {
+                    const on = customerIds.includes(c.id);
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleParty(c.id)}
+                        className="flex h-11 w-full items-center justify-between px-3.5 text-sm transition active:bg-muted/40"
+                      >
+                        <span
+                          className={cn(
+                            "truncate",
+                            on ? "font-semibold text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {c.name}
+                        </span>
+                        <span
+                          className={cn(
+                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
+                            on
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-input",
+                          )}
+                        >
+                          {on && <Check className="h-3.5 w-3.5" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
