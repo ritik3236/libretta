@@ -13,7 +13,7 @@ export default async function PartiesPage() {
   return (
     <>
       <AppHeader
-        title="Customers"
+        title="Parties"
         subtitle={`${customers.length} total`}
         right={
           <Button asChild size="sm">
@@ -27,9 +27,9 @@ export default async function PartiesPage() {
       <div className="px-5 pt-3">
         {customers.length === 0 ? (
           <div className="mt-6 rounded-2xl border border-dashed p-10 text-center">
-            <p className="text-sm font-medium text-muted-foreground">No customers yet</p>
+            <p className="text-sm font-medium text-muted-foreground">No parties yet</p>
             <Button asChild className="mt-3">
-              <Link href="/parties/new">Add your first customer</Link>
+              <Link href="/parties/new">Add your first party</Link>
             </Button>
           </div>
         ) : (

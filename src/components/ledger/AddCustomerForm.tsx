@@ -32,7 +32,7 @@ export function AddCustomerForm() {
     startTransition(async () => {
       const res = await createCustomer(form);
       if (res.ok) {
-        toast.success("Customer added");
+        toast.success("Party added");
         router.push(`/parties/${res.id}`);
       } else {
         toast.error(res.error);
@@ -43,7 +43,7 @@ export function AddCustomerForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="name">Customer name</Label>
+        <Label htmlFor="name">Party name</Label>
         <Input
           id="name"
           autoFocus
@@ -92,7 +92,7 @@ export function AddCustomerForm() {
       </div>
 
       <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? "Saving…" : "Save customer"}
+        {pending ? "Saving…" : "Save party"}
       </Button>
     </form>
   );

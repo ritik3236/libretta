@@ -1,13 +1,12 @@
-import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
-import { Download, BarChart3, Users, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { requireUser } from "@/server/auth";
 import { getDashboard } from "@/server/queries/dashboard";
 import { getBalanceTrend } from "@/server/queries/trend";
 import { AppHeader } from "@/components/nav/AppHeader";
 import { CountUp } from "@/components/ledger/CountUp";
-import { CustomerCard } from "@/components/ledger/CustomerCard";
+import { TransactionsSection } from "@/components/ledger/TransactionsSection";
 import { BalanceTrendChart } from "@/components/charts/BalanceTrendChart";
 import { formatMoney } from "@/lib/money";
 
@@ -19,12 +18,17 @@ export default async function DashboardPage() {
     getBalanceTrend(userId),
   ]);
 
-  const primary = data.totals[0];
   const firstName = user?.firstName ?? "there";
   const businessName =
     typeof user?.publicMetadata?.businessName === "string"
       ? user.publicMetadata.businessName
       : null;
+
+  const base = data.baseCurrency;
+  const baseTotal =
+    data.totals.find((t) => t.currency === base) ??
+    { currency: base, get: 0, give: 0, net: 0 };
+  const otherTotals = data.totals.filter((t) => t.currency !== base);
 
   return (
     <>
@@ -41,56 +45,55 @@ export default async function DashboardPage() {
       />
 
       <div className="px-5 pt-4">
-        {/* Hero balance */}
-        <section className="rounded-3xl border bg-muted/40 p-5">
-          <p className="text-xs font-semibold text-muted-foreground">Net balance</p>
-          {primary ? (
+        {/* You'll get / You'll give in base currency */}
+        <section className="grid grid-cols-2 gap-3">
+          <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700/80">
+              <ArrowUpRight className="h-3.5 w-3.5" /> You&apos;ll get
+            </div>
             <CountUp
-              minor={primary.net}
-              currency={primary.currency}
-              className="mt-1 block text-[32px] font-extrabold leading-none tracking-tight"
+              minor={baseTotal.get}
+              currency={base}
+              className="mt-1.5 block font-extrabold tracking-tight text-emerald-600"
+              baseSize={24}
+              minSize={13}
             />
-          ) : (
-            <p className="mt-1 text-[32px] font-extrabold tracking-tight text-muted-foreground/40">
-              —
-            </p>
-          )}
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border bg-card p-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" /> You&apos;ll get
-              </div>
-              <div className="mt-1 text-base font-extrabold text-emerald-600">
-                {primary ? formatMoney(primary.get, primary.currency) : "—"}
-              </div>
-            </div>
-            <div className="rounded-2xl border bg-card p-3">
-              <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <ArrowDownLeft className="h-3.5 w-3.5 text-red-600" /> You&apos;ll give
-              </div>
-              <div className="mt-1 text-base font-extrabold text-red-600">
-                {primary ? formatMoney(primary.give, primary.currency) : "—"}
-              </div>
-            </div>
           </div>
-
-          {data.totals.length > 1 && (
-            <div className="mt-3 space-y-1.5">
-              {data.totals.slice(1).map((t) => (
-                <div
-                  key={t.currency}
-                  className="flex items-center justify-between rounded-xl bg-card px-3 py-2 text-xs"
-                >
-                  <span className="font-semibold text-muted-foreground">{t.currency}</span>
-                  <span className={`font-bold ${t.net >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                    {formatMoney(t.net, t.currency)}
-                  </span>
-                </div>
-              ))}
+          <div className="rounded-3xl border border-red-100 bg-red-50/60 p-4">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-red-700/80">
+              <ArrowDownLeft className="h-3.5 w-3.5" /> You&apos;ll give
             </div>
-          )}
+            <CountUp
+              minor={baseTotal.give}
+              currency={base}
+              className="mt-1.5 block font-extrabold tracking-tight text-red-600"
+              baseSize={24}
+              minSize={13}
+            />
+          </div>
         </section>
+
+        {/* Other currencies (compact get/give) */}
+        {otherTotals.length > 0 && (
+          <section className="mt-3 space-y-1.5">
+            {otherTotals.map((t) => (
+              <div
+                key={t.currency}
+                className="flex items-center justify-between rounded-xl border bg-card px-3 py-2 text-xs"
+              >
+                <span className="font-bold text-muted-foreground">{t.currency}</span>
+                <span className="flex gap-3">
+                  <span className="font-semibold text-emerald-600">
+                    +{formatMoney(t.get, t.currency)}
+                  </span>
+                  <span className="font-semibold text-red-600">
+                    −{formatMoney(t.give, t.currency)}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </section>
+        )}
 
         {/* Balance trend */}
         {trend && trend.points.length > 1 && (
@@ -105,76 +108,13 @@ export default async function DashboardPage() {
           </section>
         )}
 
-        {/* Quick actions */}
-        <section className="mt-4 grid grid-cols-3 gap-2.5">
-          <Quick href="/parties" icon={<Users className="h-5 w-5" />} label="Customers" tint="sky" />
-          <Quick href="/api/export/csv" icon={<Download className="h-5 w-5" />} label="Export" tint="amber" external />
-          <Quick href="/reports" icon={<BarChart3 className="h-5 w-5" />} label="Reports" tint="violet" />
-        </section>
-
-        {/* Recent customers */}
-        <section className="mt-6">
-          <div className="mb-1 flex items-center justify-between">
-            <h2 className="text-sm font-bold">Customers</h2>
-            <Link href="/parties" className="text-xs font-semibold text-primary">
-              See all
-            </Link>
-          </div>
-          {data.recent.length === 0 ? (
-            <EmptyCustomers />
-          ) : (
-            <div>
-              {data.recent.map((c) => (
-                <CustomerCard key={c.id} customer={c} />
-              ))}
-            </div>
-          )}
-        </section>
+        {/* Latest transactions (with filter + export) */}
+        <TransactionsSection
+          entries={data.recentEntries}
+          currencies={data.totals.map((t) => t.currency)}
+          customers={data.customers}
+        />
       </div>
     </>
-  );
-}
-
-const tints: Record<string, string> = {
-  sky: "bg-sky-50 text-sky-600",
-  amber: "bg-amber-50 text-amber-600",
-  violet: "bg-violet-50 text-violet-600",
-};
-
-function Quick({
-  href,
-  icon,
-  label,
-  tint,
-  external,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  label: string;
-  tint: string;
-  external?: boolean;
-}) {
-  const inner = (
-    <div className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card py-3.5 transition active:scale-[.97]">
-      <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${tints[tint]}`}>
-        {icon}
-      </span>
-      <span className="text-[10px] font-bold text-foreground/70">{label}</span>
-    </div>
-  );
-  return external ? <a href={href}>{inner}</a> : <Link href={href}>{inner}</Link>;
-}
-
-function EmptyCustomers() {
-  return (
-    <div className="rounded-2xl border border-dashed p-8 text-center">
-      <p className="text-sm font-medium text-muted-foreground">No customers yet</p>
-      <Link
-        href="/parties/new"
-        className="mt-3 inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
-      >
-        Add your first customer
-      </Link>
-    </div>
   );
 }

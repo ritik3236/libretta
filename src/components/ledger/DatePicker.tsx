@@ -23,13 +23,17 @@ export function DatePicker({
   value,
   onChange,
   max,
+  placeholder = "Select date",
+  className,
 }: {
-  value: Date;
+  value: Date | null;
   onChange: (d: Date) => void;
   max?: Date;
+  placeholder?: string;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const [view, setView] = useState(() => startOfMonth(value));
+  const [view, setView] = useState(() => startOfMonth(value ?? new Date()));
 
   const days = eachDayOfInterval({
     start: startOfWeek(startOfMonth(view)),
@@ -41,10 +45,15 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="flex h-12 w-full items-center gap-2 rounded-xl border border-input bg-background px-4 text-left text-base shadow-sm outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
+          className={cn(
+            "flex h-12 w-full items-center gap-2 rounded-xl border border-input bg-background px-4 text-left text-base shadow-sm outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30",
+            className,
+          )}
         >
           <CalIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-          <span className="truncate">{format(value, "d MMM yyyy")}</span>
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value ? format(value, "d MMM yyyy") : placeholder}
+          </span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-[300px]">
@@ -76,7 +85,7 @@ export function DatePicker({
 
         <div className="mt-1 grid grid-cols-7 gap-1">
           {days.map((day) => {
-            const selected = isSameDay(day, value);
+            const selected = value ? isSameDay(day, value) : false;
             const disabled = max ? isAfter(day, max) : false;
             const outside = !isSameMonth(day, view);
             return (

@@ -19,9 +19,6 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  },
   "dependencies": {
     "@clerk/nextjs": "^6.12.0",
     "@prisma/client": "^6.5.0",

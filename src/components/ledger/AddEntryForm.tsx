@@ -52,9 +52,9 @@ export function AddEntryForm({
   if (customers.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed bg-muted/40 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Add a customer first to record an entry.</p>
+        <p className="text-sm text-muted-foreground">Add a party first to record an entry.</p>
         <Button asChild className="mt-4">
-          <Link href="/parties/new">Add customer</Link>
+          <Link href="/parties/new">Add party</Link>
         </Button>
       </div>
     );
@@ -124,7 +124,7 @@ export function AddEntryForm({
 
       {/* Customer */}
       <div className="space-y-1.5">
-        <Label>Customer</Label>
+        <Label>Party</Label>
         <Select value={customerId} onValueChange={setCustomerId}>
           <SelectTrigger>
             <SelectValue />

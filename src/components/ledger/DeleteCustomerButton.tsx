@@ -12,8 +12,8 @@ export function DeleteCustomerButton({ id, name }: { id: string; name: string })
   return (
     <ConfirmDialog
       title={`Delete ${name}?`}
-      description="This permanently removes the customer and all their entries. This can't be undone."
-      confirmLabel="Delete customer"
+      description="This permanently removes the party and all their entries. This can't be undone."
+      confirmLabel="Delete party"
       onConfirm={async () => {
         const res = await deleteCustomer(id);
         if (res.ok) {
@@ -25,7 +25,7 @@ export function DeleteCustomerButton({ id, name }: { id: string; name: string })
       }}
       trigger={
         <button
-          aria-label="Delete customer"
+          aria-label="Delete party"
           className="flex h-9 w-9 items-center justify-center rounded-xl border text-destructive transition hover:bg-destructive/10 active:scale-95"
         >
           <Trash2 className="h-5 w-5" />

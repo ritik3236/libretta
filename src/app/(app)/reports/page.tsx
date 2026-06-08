@@ -14,7 +14,7 @@ export default async function ReportsPage() {
     <>
       <AppHeader
         title="Reports"
-        subtitle={`${customerCount} customers`}
+        subtitle={`${customerCount} parties`}
         right={
           <Button asChild size="sm" variant="outline">
             <a href="/api/export/csv">
