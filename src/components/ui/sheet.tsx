@@ -38,16 +38,26 @@ function SheetContent({
     setDragY(0);
   }
 
+  const progress = Math.min(dragY / 300, 1);
+
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+      <DialogPrimitive.Overlay
+        style={{
+          opacity: dragY > 0 ? 1 - progress : undefined,
+          transition: dragging ? "none" : "opacity 0.2s ease",
+        }}
+        className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+      />
       <DialogPrimitive.Content
         ref={contentRef}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
-          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transform:
+            dragY > 0 ? `translateY(${dragY}px) scale(${1 - progress * 0.04})` : undefined,
+          transformOrigin: "bottom center",
           transition: dragging ? "none" : "transform 0.2s ease",
         }}
         className={cn(

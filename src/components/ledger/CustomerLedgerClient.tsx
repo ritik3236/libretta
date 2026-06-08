@@ -7,6 +7,7 @@ import { createEntry } from "@/server/actions/entries";
 import { CountUp } from "./CountUp";
 import { EntryItem } from "./EntryItem";
 import { DatePicker } from "./DatePicker";
+import { NumberPad } from "./NumberPad";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,20 +184,21 @@ export function CustomerLedgerClient({
             {gave ? "You gave" : "You got"}
           </SheetTitle>
           <form onSubmit={submit} className="mt-3 space-y-4">
-            <div className="rounded-2xl border bg-muted/40 px-4 py-4 text-center">
+            <div className="rounded-2xl border bg-muted/40 px-4 py-5 text-center">
               <div className="flex items-center justify-center gap-1">
                 <span className="text-2xl font-bold text-muted-foreground">{symbol}</span>
-                <input
-                  autoFocus
-                  required
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-                  inputMode="decimal"
-                  placeholder="0"
-                  className="w-44 bg-transparent text-center text-4xl font-extrabold tracking-tight outline-none"
-                />
+                <span
+                  className={cn(
+                    "text-4xl font-extrabold tracking-tight",
+                    !amount && "text-muted-foreground/40",
+                  )}
+                >
+                  {amount || "0"}
+                </span>
               </div>
             </div>
+
+            <NumberPad value={amount} onChange={setAmount} />
 
             <div className="space-y-1.5">
               <Label>Date</Label>
