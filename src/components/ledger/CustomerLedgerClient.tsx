@@ -184,8 +184,8 @@ export function CustomerLedgerClient({
           <SheetTitle className={gave ? "text-emerald-600" : "text-red-600"}>
             {gave ? "You gave" : "You got"}
           </SheetTitle>
-          <form onSubmit={submit} className="mt-3 space-y-4">
-            <div className="rounded-2xl border bg-muted/40 px-4 py-5 text-center">
+          <form onSubmit={submit} className="mt-2 space-y-3">
+            <div className="rounded-2xl border bg-muted/40 px-4 py-3 text-center">
               <div className="flex items-center justify-center gap-1">
                 <span className="text-2xl font-bold text-muted-foreground">{symbol}</span>
                 <span

@@ -51,7 +51,7 @@ export function NumberPad({
           type="button"
           onClick={() => press(k)}
           className={cn(
-            "flex h-14 items-center justify-center rounded-xl bg-muted text-xl font-semibold transition active:scale-95 active:bg-muted/70",
+            "flex h-12 items-center justify-center rounded-xl bg-muted text-xl font-semibold transition active:scale-95 active:bg-muted/70",
             k === "del" && "text-muted-foreground",
           )}
           aria-label={k === "del" ? "Delete" : k}
