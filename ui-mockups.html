@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LedgerBook — 5 UI Direction Mockups</title>
+<style>
+  :root { --ink:#0b1020; }
+  * { box-sizing: border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0e1118;
+    color: #e7ecf5;
+    padding: 48px 24px 80px;
+  }
+  .page-head { max-width: 1100px; margin: 0 auto 40px; text-align:center; }
+  .page-head h1 { font-size: 34px; font-weight: 800; letter-spacing:-0.02em; background: linear-gradient(90deg,#7c8cff,#56e0c8); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .page-head p { margin-top: 12px; color:#9aa6bd; font-size:15px; max-width:640px; margin-left:auto;margin-right:auto; line-height:1.6;}
+  .gallery {
+    max-width: 1280px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 40px 32px; align-items:start; justify-items:center;
+  }
+  .demo { width: 320px; }
+  .demo-meta { margin-top: 18px; }
+  .demo-meta .tag { display:inline-block; font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#7c8cff; background:rgba(124,140,255,.12); padding:4px 10px; border-radius:999px; }
+  .demo-meta h3 { font-size:18px; font-weight:700; margin:10px 0 6px; color:#fff; }
+  .demo-meta p { font-size:13px; color:#9aa6bd; line-height:1.55; }
+
+  /* ===== Phone frame ===== */
+  .phone {
+    width: 320px; height: 660px; border-radius: 44px; padding: 12px;
+    background: #1c1f29; position: relative;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,.7), 0 0 0 2px #2a2e3b inset;
+  }
+  .phone .notch { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#1c1f29; border-radius:0 0 18px 18px; z-index:50; }
+  .screen { width:100%; height:100%; border-radius:34px; overflow:hidden; position:relative; }
+  .scroll { position:absolute; inset:0; overflow:hidden; }
+  .statusbar { display:flex; justify-content:space-between; align-items:center; padding:14px 22px 6px; font-size:12px; font-weight:600; }
+  svg { display:block; }
+  .ico { width:20px; height:20px; stroke-width:2; fill:none; stroke:currentColor; stroke-linecap:round; stroke-linejoin:round; }
+  .ico-sm { width:16px; height:16px; }
+
+  /* bottom nav shared structure */
+  .nav { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-around; align-items:center; padding:12px 16px 22px; }
+  .nav a { display:flex; flex-direction:column; align-items:center; gap:4px; font-size:10px; font-weight:600; opacity:.55; }
+  .nav a.active { opacity:1; }
+  .fab { position:absolute; bottom:62px; left:50%; transform:translateX(-50%); width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; z-index:30; }
+  .fab .ico { width:26px; height:26px; }
+
+  /* avatar */
+  .av { width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0; }
+
+  /* ============================================================ */
+  /* DEMO 1 — AURORA GLASS (light glassmorphism premium)          */
+  /* ============================================================ */
+  .d1 .screen { background:
+      radial-gradient(120% 80% at 0% 0%, #c4b5fd 0%, transparent 45%),
+      radial-gradient(120% 80% at 100% 10%, #99f6e4 0%, transparent 45%),
+      radial-gradient(120% 90% at 50% 100%, #fbcfe8 0%, transparent 50%),
+      #eef1fb; color:#1f2440; }
+  .d1 .statusbar { color:#3b4163; }
+  .d1 .pad { padding: 4px 18px 0; }
+  .d1 .hi { font-size:13px; color:#5b6088; }
+  .d1 .hi b { color:#1f2440; }
+  .d1 .topbar { display:flex; justify-content:space-between; align-items:center; margin-top:2px; }
+  .d1 .bell { width:40px;height:40px;border-radius:14px; background:rgba(255,255,255,.55); backdrop-filter:blur(8px); display:flex;align-items:center;justify-content:center; box-shadow:0 4px 12px rgba(80,80,160,.12); border:1px solid rgba(255,255,255,.6);}
+  .glass-card { background:rgba(255,255,255,.55); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1px solid rgba(255,255,255,.7); border-radius:24px; box-shadow:0 12px 32px -8px rgba(76,76,160,.25); }
+  .d1 .balance { margin-top:16px; padding:20px; }
+  .d1 .balance .lbl { font-size:12px; color:#5b6088; font-weight:600; }
+  .d1 .balance .amt { font-size:30px; font-weight:800; letter-spacing:-.02em; margin-top:6px; }
+  .d1 .balance .amt small{font-size:15px; color:#7a7fa6; font-weight:600;}
+  .d1 .pills { display:flex; gap:10px; margin-top:16px; }
+  .d1 .pill { flex:1; border-radius:16px; padding:12px; color:#fff; }
+  .d1 .pill.get { background:linear-gradient(135deg,#34d399,#10b981); }
+  .d1 .pill.give { background:linear-gradient(135deg,#fb7185,#ef4444); }
+  .d1 .pill .t { font-size:10px; opacity:.9; font-weight:600; display:flex; align-items:center; gap:5px;}
+  .d1 .pill .v { font-size:17px; font-weight:800; margin-top:4px; }
+  .d1 .sect { display:flex; justify-content:space-between; align-items:center; margin:20px 0 10px; }
+  .d1 .sect h4 { font-size:14px; font-weight:700; }
+  .d1 .sect a { font-size:12px; color:#7c5cff; font-weight:600; }
+  .d1 .cust { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-bottom:10px; }
+  .d1 .cust .nm { font-size:14px; font-weight:700; }
+  .d1 .cust .sub { font-size:11px; color:#7a7fa6; margin-top:2px; }
+  .d1 .cust .bal { margin-left:auto; text-align:right; }
+  .d1 .cust .bal .b { font-size:14px; font-weight:800; }
+  .d1 .cust .bal .c { font-size:10px; color:#7a7fa6; }
+  .pos { color:#0e9f6e !important; } .neg { color:#e02424 !important; }
+  .d1 .fab { background:linear-gradient(135deg,#7c5cff,#5b8cff); color:#fff; box-shadow:0 14px 30px -6px rgba(124,92,255,.6); }
+  .d1 .nav { background:rgba(255,255,255,.6); backdrop-filter:blur(16px); border-top:1px solid rgba(255,255,255,.7); color:#1f2440; }
+  .d1 .nav a.active { color:#7c5cff; }
+
+  /* ============================================================ */
+  /* DEMO 2 — OBSIDIAN GLASS (dark glassmorphism premium)         */
+  /* ============================================================ */
+  .d2 .screen { background:
+      radial-gradient(100% 70% at 100% 0%, rgba(124,92,255,.45) 0%, transparent 50%),
+      radial-gradient(100% 70% at 0% 30%, rgba(34,211,238,.30) 0%, transparent 45%),
+      #0a0d18; color:#eaf0ff; }
+  .d2 .statusbar{color:#cdd6f5;}
+  .d2 .pad{ padding:4px 18px 0; }
+  .d2 .topbar{display:flex; justify-content:space-between; align-items:center;}
+  .d2 .hi{font-size:13px;color:#9aa6d4;} .d2 .hi b{color:#fff;}
+  .d2 .bell{width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;}
+  .gcard-d{ background:rgba(255,255,255,.06); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border:1px solid rgba(255,255,255,.12); border-radius:24px; box-shadow:0 18px 40px -12px rgba(0,0,0,.6); }
+  .d2 .balance{margin-top:16px; padding:20px; position:relative; overflow:hidden;}
+  .d2 .balance .lbl{font-size:12px;color:#9aa6d4;font-weight:600;}
+  .d2 .balance .amt{font-size:30px;font-weight:800;margin-top:6px; background:linear-gradient(90deg,#fff,#b9c4ff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .d2 .spark{position:absolute; right:0; bottom:0; opacity:.5;}
+  .d2 .pills{display:flex;gap:10px;margin-top:16px;}
+  .d2 .pill{flex:1;border-radius:16px;padding:12px;border:1px solid rgba(255,255,255,.1);}
+  .d2 .pill.get{background:linear-gradient(135deg,rgba(16,185,129,.25),rgba(16,185,129,.05));}
+  .d2 .pill.give{background:linear-gradient(135deg,rgba(239,68,68,.25),rgba(239,68,68,.05));}
+  .d2 .pill .t{font-size:10px;font-weight:600;color:#cdd6f5;display:flex;align-items:center;gap:5px;}
+  .d2 .pill .v{font-size:17px;font-weight:800;margin-top:4px;color:#fff;}
+  .d2 .sect{display:flex;justify-content:space-between;align-items:center;margin:20px 0 10px;}
+  .d2 .sect h4{font-size:14px;font-weight:700;color:#fff;} .d2 .sect a{font-size:12px;color:#8b9bff;font-weight:600;}
+  .d2 .cust{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:10px;}
+  .d2 .cust .nm{font-size:14px;font-weight:700;color:#fff;}
+  .d2 .cust .sub{font-size:11px;color:#8893bf;margin-top:2px;}
+  .d2 .cust .bal{margin-left:auto;text-align:right;}
+  .d2 .cust .bal .b{font-size:14px;font-weight:800;}
+  .d2 .cust .bal .c{font-size:10px;color:#8893bf;}
+  .d2 .fab{background:linear-gradient(135deg,#7c5cff,#22d3ee);color:#fff;box-shadow:0 14px 34px -6px rgba(124,92,255,.7);}
+  .d2 .nav{background:rgba(10,13,24,.7);backdrop-filter:blur(16px);border-top:1px solid rgba(255,255,255,.08);color:#cdd6f5;}
+  .d2 .nav a.active{color:#8b9bff;}
+
+  /* ============================================================ */
+  /* DEMO 3 — PAPER (clean minimal fintech, light)               */
+  /* ============================================================ */
+  .d3 .screen{background:#ffffff;color:#0f172a;}
+  .d3 .statusbar{color:#0f172a;}
+  .d3 .pad{padding:4px 20px 0;}
+  .d3 .topbar{display:flex;align-items:center;gap:12px;}
+  .d3 .topbar .nm{font-size:16px;font-weight:800;}
+  .d3 .topbar .sub{font-size:11px;color:#64748b;}
+  .d3 .topbar .bell{margin-left:auto;width:38px;height:38px;border-radius:12px;border:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center;color:#334155;}
+  .d3 .balance{margin-top:18px;border:1px solid #e8edf3;border-radius:20px;padding:20px;background:#fbfcfe;}
+  .d3 .balance .lbl{font-size:12px;color:#64748b;font-weight:600;letter-spacing:.02em;}
+  .d3 .balance .amt{font-size:32px;font-weight:800;letter-spacing:-.03em;margin-top:6px;}
+  .d3 .balance .chg{font-size:12px;color:#0e9f6e;font-weight:600;margin-top:4px;display:flex;align-items:center;gap:4px;}
+  .d3 .stat-row{display:flex;gap:12px;margin-top:14px;}
+  .d3 .stat{flex:1;border:1px solid #e8edf3;border-radius:16px;padding:13px;}
+  .d3 .stat .t{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;gap:5px;}
+  .d3 .stat .v{font-size:17px;font-weight:800;margin-top:6px;}
+  .d3 .sect{display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px;}
+  .d3 .sect h4{font-size:14px;font-weight:700;} .d3 .sect a{font-size:12px;color:#16a34a;font-weight:600;}
+  .d3 .cust{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f1f5f9;}
+  .d3 .cust .nm{font-size:14px;font-weight:700;}
+  .d3 .cust .sub{font-size:11px;color:#94a3b8;margin-top:2px;}
+  .d3 .cust .bal{margin-left:auto;text-align:right;}
+  .d3 .cust .bal .b{font-size:14px;font-weight:800;}
+  .d3 .cust .bal .c{font-size:10px;color:#94a3b8;}
+  .d3 .av{background:#f1f5f9;color:#475569;border-radius:50%;}
+  .d3 .fab{background:#0f172a;color:#fff;box-shadow:0 12px 26px -8px rgba(15,23,42,.5);border-radius:18px;width:auto;height:52px;padding:0 22px;gap:8px;font-weight:700;font-size:14px;}
+  .d3 .fab .ico{width:20px;height:20px;}
+  .d3 .nav{background:#fff;border-top:1px solid #eef2f7;color:#0f172a;}
+  .d3 .nav a.active{color:#16a34a;}
+
+  /* ============================================================ */
+  /* DEMO 4 — MIDNIGHT (dark mode first, neon accent)            */
+  /* ============================================================ */
+  .d4 .screen{background:#0b0e14;color:#e6e9f2;}
+  .d4 .statusbar{color:#c7ccda;}
+  .d4 .pad{padding:4px 18px 0;}
+  .d4 .topbar{display:flex;align-items:center;gap:12px;}
+  .d4 .topbar .nm{font-size:16px;font-weight:800;color:#fff;}
+  .d4 .topbar .sub{font-size:11px;color:#7d8499;}
+  .d4 .topbar .bell{margin-left:auto;width:38px;height:38px;border-radius:12px;background:#141925;border:1px solid #20283a;display:flex;align-items:center;justify-content:center;color:#c7ccda;}
+  .d4 .balance{margin-top:18px;border-radius:20px;padding:20px;background:linear-gradient(135deg,#161c2b,#10131c);border:1px solid #222a3d;position:relative;overflow:hidden;}
+  .d4 .balance:after{content:"";position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.5),transparent 70%);}
+  .d4 .balance .lbl{font-size:12px;color:#8b93ab;font-weight:600;}
+  .d4 .balance .amt{font-size:31px;font-weight:800;margin-top:6px;color:#fff;}
+  .d4 .balance .chg{font-size:12px;color:#34d399;font-weight:600;margin-top:4px;}
+  .d4 .stat-row{display:flex;gap:12px;margin-top:14px;}
+  .d4 .stat{flex:1;border-radius:16px;padding:13px;background:#121724;border:1px solid #1e2536;}
+  .d4 .stat .t{font-size:10px;color:#8b93ab;font-weight:600;display:flex;align-items:center;gap:5px;}
+  .d4 .stat .v{font-size:17px;font-weight:800;margin-top:6px;color:#fff;}
+  .d4 .sect{display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px;}
+  .d4 .sect h4{font-size:14px;font-weight:700;color:#fff;} .d4 .sect a{font-size:12px;color:#818cf8;font-weight:600;}
+  .d4 .cust{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px;border-radius:16px;background:#101521;border:1px solid #1a2030;}
+  .d4 .cust .nm{font-size:14px;font-weight:700;color:#fff;}
+  .d4 .cust .sub{font-size:11px;color:#7d8499;margin-top:2px;}
+  .d4 .cust .bal{margin-left:auto;text-align:right;}
+  .d4 .cust .bal .b{font-size:14px;font-weight:800;} .d4 .cust .bal .c{font-size:10px;color:#7d8499;}
+  .d4 .fab{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;box-shadow:0 0 0 4px rgba(99,102,241,.18),0 14px 30px -6px rgba(99,102,241,.6);}
+  .d4 .nav{background:#0b0e14;border-top:1px solid #1a2030;color:#c7ccda;}
+  .d4 .nav a.active{color:#818cf8;}
+  .neon-pos{color:#34d399 !important;} .neon-neg{color:#fb7185 !important;}
+
+  /* ============================================================ */
+  /* DEMO 5 — SLATE PRO (refined professional, soft elevation)   */
+  /* ============================================================ */
+  .d5 .screen{background:#f4f6fb;color:#1e293b;}
+  .d5 .statusbar{color:#1e293b;}
+  .d5 .pad{padding:4px 18px 0;}
+  .d5 .topbar{display:flex;align-items:center;gap:12px;}
+  .d5 .topbar .nm{font-size:15px;font-weight:800;}
+  .d5 .topbar .sub{font-size:11px;color:#64748b;}
+  .d5 .topbar .seg{margin-left:auto;display:flex;background:#e7ecf4;border-radius:10px;padding:3px;}
+  .d5 .topbar .seg span{font-size:10px;font-weight:700;padding:5px 9px;border-radius:8px;color:#64748b;}
+  .d5 .topbar .seg span.on{background:#fff;color:#0f3d2e;box-shadow:0 1px 3px rgba(0,0,0,.1);}
+  .d5 .balance{margin-top:16px;border-radius:20px;padding:20px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;box-shadow:0 14px 30px -10px rgba(13,148,136,.5);position:relative;overflow:hidden;}
+  .d5 .balance .lbl{font-size:12px;opacity:.85;font-weight:600;}
+  .d5 .balance .amt{font-size:30px;font-weight:800;margin-top:6px;}
+  .d5 .balance .row{display:flex;gap:18px;margin-top:14px;}
+  .d5 .balance .row div{flex:1;}
+  .d5 .balance .row .t{font-size:10px;opacity:.8;font-weight:600;}
+  .d5 .balance .row .v{font-size:15px;font-weight:800;margin-top:3px;}
+  .d5 .balance .line{width:1px;background:rgba(255,255,255,.25);}
+  .d5 .quick{display:flex;gap:10px;margin-top:16px;}
+  .d5 .quick .q{flex:1;background:#fff;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 4px 14px -8px rgba(30,41,59,.25);}
+  .d5 .quick .q .ic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto 7px;}
+  .d5 .quick .q .lab{font-size:10px;font-weight:700;color:#475569;}
+  .d5 .sect{display:flex;justify-content:space-between;align-items:center;margin:22px 0 12px;}
+  .d5 .sect h4{font-size:14px;font-weight:700;} .d5 .sect a{font-size:12px;color:#0d9488;font-weight:600;}
+  .d5 .cust{display:flex;align-items:center;gap:12px;padding:13px 14px;margin-bottom:9px;background:#fff;border-radius:16px;box-shadow:0 4px 14px -10px rgba(30,41,59,.3);}
+  .d5 .cust .nm{font-size:14px;font-weight:700;} .d5 .cust .sub{font-size:11px;color:#94a3b8;margin-top:2px;}
+  .d5 .cust .bal{margin-left:auto;text-align:right;}
+  .d5 .cust .bal .b{font-size:14px;font-weight:800;} .d5 .cust .bal .c{font-size:10px;color:#94a3b8;}
+  .d5 .fab{background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;box-shadow:0 14px 28px -8px rgba(13,148,136,.6);}
+  .d5 .nav{background:#fff;border-top:1px solid #e7ecf4;color:#475569;}
+  .d5 .nav a.active{color:#0d9488;}
+  .badge-cur{font-size:9px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.06);margin-left:6px;vertical-align:middle;}
+  .d2 .badge-cur,.d4 .badge-cur{background:rgba(255,255,255,.12);color:#cdd6f5;}
+</style>
+</head>
+<body>
+<div class="page-head">
+  <h1>LedgerBook — 5 UI Directions</h1>
+  <p>Mobile-first mockups of the home dashboard + customer list for your give/take Khata app. Multi-currency, Clerk-ready, built to scale. Pick the one (or mix) you like and I'll build the real Next.js app around it.</p>
+</div>
+
+<div class="gallery">
+
+  <!-- ===================== DEMO 1 ===================== -->
+  <div class="demo d1">
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="scroll">
+      <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+      <div class="pad">
+        <div class="topbar">
+          <div><div class="hi">Good morning,</div><div class="hi"><b style="font-size:17px">Ritik's Store 👋</b></div></div>
+          <div class="bell"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        </div>
+        <div class="glass-card balance">
+          <div class="lbl">Net Balance</div>
+          <div class="amt">₹ 48,250 <small>net receivable</small></div>
+          <div class="pills">
+            <div class="pill get"><div class="t">▲ You'll get</div><div class="v">₹ 62,400</div></div>
+            <div class="pill give"><div class="t">▼ You'll give</div><div class="v">₹ 14,150</div></div>
+          </div>
+        </div>
+        <div class="sect"><h4>Customers</h4><a>View all</a></div>
+        <div class="glass-card cust">
+          <div class="av" style="background:linear-gradient(135deg,#c4b5fd,#818cf8);color:#fff">AS</div>
+          <div><div class="nm">Amit Sharma</div><div class="sub">2 days ago</div></div>
+          <div class="bal"><div class="b pos">₹ 12,500</div><div class="c">you'll get</div></div>
+        </div>
+        <div class="glass-card cust">
+          <div class="av" style="background:linear-gradient(135deg,#99f6e4,#2dd4bf);color:#064e3b">PK</div>
+          <div><div class="nm">Priya Kumar <span class="badge-cur">USD</span></div><div class="sub">Today</div></div>
+          <div class="bal"><div class="b neg">$ 320</div><div class="c">you'll give</div></div>
+        </div>
+        <div class="glass-card cust">
+          <div class="av" style="background:linear-gradient(135deg,#fbcfe8,#f472b6);color:#831843">RV</div>
+          <div><div class="nm">Ravi Verma</div><div class="sub">5 days ago</div></div>
+          <div class="bal"><div class="b pos">₹ 8,900</div><div class="c">you'll get</div></div>
+        </div>
+      </div>
+      <div class="fab"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Parties</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Reports</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      </div>
+    </div></div></div>
+    <div class="demo-meta"><span class="tag">Direction 1</span><h3>Aurora Glass</h3><p>Light glassmorphism. Soft aurora gradient mesh, frosted cards, vivid get/give pills. Premium &amp; friendly — great for a consumer Khata feel.</p></div>
+  </div>
+
+  <!-- ===================== DEMO 2 ===================== -->
+  <div class="demo d2">
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="scroll">
+      <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+      <div class="pad">
+        <div class="topbar">
+          <div><div class="hi">Welcome back,</div><div class="hi"><b style="font-size:17px">Ritik ✦</b></div></div>
+          <div class="bell"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        </div>
+        <div class="gcard-d balance">
+          <div class="lbl">Net Balance</div>
+          <div class="amt">₹ 48,250</div>
+          <svg class="spark" width="120" height="44" viewBox="0 0 120 44"><polyline points="0,34 18,28 34,32 52,18 70,24 88,10 106,16 120,6" fill="none" stroke="#7c5cff" stroke-width="2.5" stroke-linecap="round"/></svg>
+          <div class="pills">
+            <div class="pill get"><div class="t">▲ You'll get</div><div class="v">₹ 62,400</div></div>
+            <div class="pill give"><div class="t">▼ You'll give</div><div class="v">₹ 14,150</div></div>
+          </div>
+        </div>
+        <div class="sect"><h4>Recent Parties</h4><a>View all</a></div>
+        <div class="gcard-d cust">
+          <div class="av" style="background:linear-gradient(135deg,#7c5cff,#5b8cff);color:#fff">AS</div>
+          <div><div class="nm">Amit Sharma</div><div class="sub">2 days ago · 4 entries</div></div>
+          <div class="bal"><div class="b pos">₹ 12,500</div><div class="c">you'll get</div></div>
+        </div>
+        <div class="gcard-d cust">
+          <div class="av" style="background:linear-gradient(135deg,#22d3ee,#0ea5e9);color:#fff">PK</div>
+          <div><div class="nm">Priya Kumar <span class="badge-cur">USD</span></div><div class="sub">Today</div></div>
+          <div class="bal"><div class="b neg">$ 320</div><div class="c">you'll give</div></div>
+        </div>
+        <div class="gcard-d cust">
+          <div class="av" style="background:linear-gradient(135deg,#f472b6,#a855f7);color:#fff">RV</div>
+          <div><div class="nm">Ravi Verma</div><div class="sub">5 days ago</div></div>
+          <div class="bal"><div class="b pos">₹ 8,900</div><div class="c">you'll get</div></div>
+        </div>
+      </div>
+      <div class="fab"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Parties</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Reports</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      </div>
+    </div></div></div>
+    <div class="demo-meta"><span class="tag">Direction 2</span><h3>Obsidian Glass</h3><p>Dark glassmorphism with violet/cyan glow, frosted depth and a balance sparkline. The most "premium fintech" of the set.</p></div>
+  </div>
+
+  <!-- ===================== DEMO 3 ===================== -->
+  <div class="demo d3">
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="scroll">
+      <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+      <div class="pad">
+        <div class="topbar">
+          <div class="av" style="background:#0f172a;color:#fff;border-radius:12px">R</div>
+          <div><div class="nm">Ritik's Store</div><div class="sub">Free plan</div></div>
+          <div class="bell"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        </div>
+        <div class="balance">
+          <div class="lbl">Net Balance</div>
+          <div class="amt">₹ 48,250</div>
+          <div class="chg"><svg class="ico ico-sm" viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg> +12% this month</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="t"><svg class="ico ico-sm" style="color:#16a34a" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>You'll get</div><div class="v" style="color:#16a34a">₹ 62,400</div></div>
+          <div class="stat"><div class="t"><svg class="ico ico-sm" style="color:#dc2626" viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg>You'll give</div><div class="v" style="color:#dc2626">₹ 14,150</div></div>
+        </div>
+        <div class="sect"><h4>Customers</h4><a>See all</a></div>
+        <div class="cust">
+          <div class="av">AS</div>
+          <div><div class="nm">Amit Sharma</div><div class="sub">2 days ago</div></div>
+          <div class="bal"><div class="b" style="color:#16a34a">₹ 12,500</div><div class="c">you'll get</div></div>
+        </div>
+        <div class="cust">
+          <div class="av">PK</div>
+          <div><div class="nm">Priya Kumar <span class="badge-cur">USD</span></div><div class="sub">Today</div></div>
+          <div class="bal"><div class="b" style="color:#dc2626">$ 320</div><div class="c">you'll give</div></div>
+        </div>
+        <div class="cust">
+          <div class="av">RV</div>
+          <div><div class="nm">Ravi Verma</div><div class="sub">5 days ago</div></div>
+          <div class="bal"><div class="b" style="color:#16a34a">₹ 8,900</div><div class="c">you'll get</div></div>
+        </div>
+      </div>
+      <div class="fab"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add Entry</div>
+      <div class="nav">
+        <a class="active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Parties</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Reports</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      </div>
+    </div></div></div>
+    <div class="demo-meta"><span class="tag">Direction 3</span><h3>Paper (Minimal)</h3><p>Clean white fintech. Crisp borders, generous whitespace, single emerald accent, labelled "Add Entry" pill. Stripe/Linear restraint — fast to read, ages well.</p></div>
+  </div>
+
+  <!-- ===================== DEMO 4 ===================== -->
+  <div class="demo d4">
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="scroll">
+      <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+      <div class="pad">
+        <div class="topbar">
+          <div class="av" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border-radius:12px">R</div>
+          <div><div class="nm">Ritik's Store</div><div class="sub">Pro · synced</div></div>
+          <div class="bell"><svg class="ico" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+        </div>
+        <div class="balance">
+          <div class="lbl">Net Balance</div>
+          <div class="amt">₹ 48,250</div>
+          <div class="chg">▲ +₹5,200 vs last week</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat"><div class="t"><span class="neon-pos">▲</span> You'll get</div><div class="v neon-pos">₹ 62,400</div></div>
+          <div class="stat"><div class="t"><span class="neon-neg">▼</span> You'll give</div><div class="v neon-neg">₹ 14,150</div></div>
+        </div>
+        <div class="sect"><h4>Recent Parties</h4><a>View all</a></div>
+        <div class="cust">
+          <div class="av" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff">AS</div>
+          <div><div class="nm">Amit Sharma</div><div class="sub">2 days ago</div></div>
+          <div class="bal"><div class="b neon-pos">₹ 12,500</div><div class="c">you'll get</div></div>
+        </div>
+        <div class="cust">
+          <div class="av" style="background:linear-gradient(135deg,#06b6d4,#3b82f6);color:#fff">PK</div>
+          <div><div class="nm">Priya Kumar <span class="badge-cur">USD</span></div><div class="sub">Today</div></div>
+          <div class="bal"><div class="b neon-neg">$ 320</div><div class="c">you'll give</div></div>
+        </div>
+        <div class="cust">
+          <div class="av" style="background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff">RV</div>
+          <div><div class="nm">Ravi Verma</div><div class="sub">5 days ago</div></div>
+          <div class="bal"><div class="b neon-pos">₹ 8,900</div><div class="c">you'll get</div></div>
+        </div>
+      </div>
+      <div class="fab"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Parties</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Reports</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      </div>
+    </div></div></div>
+    <div class="demo-meta"><span class="tag">Direction 4</span><h3>Midnight</h3><p>Dark-mode-first with indigo→violet neon accent and glowing FAB. Vercel/Raycast energy. Low-light friendly, modern, developer-grade polish.</p></div>
+  </div>
+
+  <!-- ===================== DEMO 5 ===================== -->
+  <div class="demo d5">
+    <div class="phone"><div class="notch"></div><div class="screen"><div class="scroll">
+      <div class="statusbar"><span>9:41</span><span>5G&nbsp;&nbsp;100%</span></div>
+      <div class="pad">
+        <div class="topbar">
+          <div class="av" style="background:#0d9488;color:#fff;border-radius:12px">R</div>
+          <div><div class="nm">Ritik's Store</div><div class="sub">Owner</div></div>
+          <div class="seg"><span class="on">All</span><span>₹</span><span>$</span></div>
+        </div>
+        <div class="balance">
+          <div class="lbl">Net Balance</div>
+          <div class="amt">₹ 48,250</div>
+          <div class="row">
+            <div><div class="t">▲ You'll get</div><div class="v">₹ 62,400</div></div>
+            <div class="line"></div>
+            <div><div class="t">▼ You'll give</div><div class="v">₹ 14,150</div></div>
+          </div>
+        </div>
+        <div class="quick">
+          <div class="q"><div class="ic" style="background:#dcfce7;color:#16a34a"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div><div class="lab">Add</div></div>
+          <div class="q"><div class="ic" style="background:#e0f2fe;color:#0284c7"><svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg></div><div class="lab">Import</div></div>
+          <div class="q"><div class="ic" style="background:#fef3c7;color:#d97706"><svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5-5 5 5M12 5v12"/></svg></div><div class="lab">Export</div></div>
+          <div class="q"><div class="ic" style="background:#ede9fe;color:#7c3aed"><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg></div><div class="lab">Reports</div></div>
+        </div>
+        <div class="sect"><h4>Customers</h4><a>See all</a></div>
+        <div class="cust">
+          <div class="av" style="background:#ccfbf1;color:#0f766e;border-radius:12px">AS</div>
+          <div><div class="nm">Amit Sharma</div><div class="sub">2 days ago</div></div>
+          <div class="bal"><div class="b" style="color:#0d9488">₹ 12,500</div><div class="c">you'll get</div></div>
+        </div>
+        <div class="cust">
+          <div class="av" style="background:#fee2e2;color:#b91c1c;border-radius:12px">PK</div>
+          <div><div class="nm">Priya Kumar <span class="badge-cur">USD</span></div><div class="sub">Today</div></div>
+          <div class="bal"><div class="b" style="color:#dc2626">$ 320</div><div class="c">you'll give</div></div>
+        </div>
+      </div>
+      <div class="fab"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+      <div class="nav">
+        <a class="active"><svg class="ico" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Home</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Parties</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Reports</a>
+        <a><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>Profile</a>
+      </div>
+    </div></div></div>
+    <div class="demo-meta"><span class="tag">Direction 5</span><h3>Slate Pro</h3><p>Professional &amp; trustworthy. Teal gradient balance card, quick-action row (Add / Import / Export / Reports), currency toggle, soft elevated cards. Most "business tool" of the set.</p></div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,66 @@
+// Libretta — Prisma schema (MySQL)
+// See SPEC.md §5 for the data-model rationale.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id // Clerk user id
+  email        String     @unique
+  name         String?
+  businessName String?
+  baseCurrency String     @default("INR")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  customers    Customer[]
+  entries      Entry[]
+
+  @@map("lb_users")
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  phone        String?
+  currency     String   @default("INR") // this party's ledger currency
+  balanceMinor BigInt   @default(0) // cached running balance, signed minor units (+ = you'll get)
+  note         String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  entries      Entry[]
+
+  @@index([userId])
+  @@index([userId, name])
+  @@map("lb_customers")
+}
+
+model Entry {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  direction   Direction // CREDIT = you gave (receivable) | DEBIT = you got
+  amountMinor BigInt // positive, minor units
+  currency    String // = customer.currency at time of entry
+  note        String?   @db.Text
+  occurredAt  DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+
+  @@index([customerId, occurredAt])
+  @@index([userId, occurredAt])
+  @@map("lb_entries")
+}
+
+enum Direction {
+  CREDIT
+  DEBIT
+}
