@@ -62,6 +62,8 @@ export default async function CustomerLedgerPage({
             balance: customer.balance,
           }}
           entries={customer.entries}
+          totalGave={customer.totalGave}
+          totalGot={customer.totalGot}
         />
       </div>
     </>

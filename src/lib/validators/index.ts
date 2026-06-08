@@ -22,3 +22,12 @@ export const entrySchema = z.object({
   occurredAt: z.coerce.date().optional(),
 });
 export type EntryInput = z.infer<typeof entrySchema>;
+
+export const entryUpdateSchema = z.object({
+  id: z.string().min(1),
+  direction: z.enum(["CREDIT", "DEBIT"]),
+  amount: z.coerce.number().positive("Amount must be greater than 0").finite(),
+  note: z.string().trim().max(500).optional().or(z.literal("")),
+  occurredAt: z.coerce.date().optional(),
+});
+export type EntryUpdateInput = z.infer<typeof entryUpdateSchema>;

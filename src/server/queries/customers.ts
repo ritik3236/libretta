@@ -61,13 +61,31 @@ export async function getCustomer(userId: string, id: string) {
   });
   if (!customer) return null;
 
-  const entries = await prisma.entry.findMany({
-    where: { customerId: id, userId },
-    orderBy: { occurredAt: "desc" },
-  });
+  const [entries, grouped] = await Promise.all([
+    prisma.entry.findMany({
+      where: { customerId: id, userId },
+      orderBy: { occurredAt: "desc" },
+    }),
+    // Server-side aggregate so totals reflect ALL entries, not just rendered rows.
+    prisma.entry.groupBy({
+      by: ["direction"],
+      where: { customerId: id, userId },
+      _sum: { amountMinor: true },
+    }),
+  ]);
+
+  let totalGave = 0;
+  let totalGot = 0;
+  for (const g of grouped) {
+    const sum = Number(g._sum.amountMinor ?? 0);
+    if (g.direction === "CREDIT") totalGave = sum;
+    else totalGot = sum;
+  }
 
   return {
     ...toView(customer),
+    totalGave,
+    totalGot,
     entries: entries.map<EntryView>((e) => ({
       id: e.id,
       direction: e.direction,

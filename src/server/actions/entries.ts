@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
-import { entrySchema } from "@/lib/validators";
+import { entrySchema, entryUpdateSchema } from "@/lib/validators";
 import { toMinor } from "@/lib/money";
 
 export type ActionResult =
@@ -53,6 +53,48 @@ export async function createEntry(input: unknown): Promise<ActionResult> {
   revalidatePath("/parties");
   revalidatePath("/dashboard");
   return { ok: true, id: entry.id };
+}
+
+/** Edits an entry and adjusts the cached balance by the delta between old and new. */
+export async function updateEntry(input: unknown): Promise<ActionResult> {
+  const userId = await requireUser();
+  const parsed = entryUpdateSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const { id, direction, amount, note, occurredAt } = parsed.data;
+
+  const existing = await prisma.entry.findFirst({ where: { id, userId } });
+  if (!existing) return { ok: false, error: "Entry not found" };
+
+  const newAmountMinor = BigInt(toMinor(amount, existing.currency));
+  const oldDelta =
+    existing.direction === "CREDIT" ? existing.amountMinor : -existing.amountMinor;
+  const newDelta = direction === "CREDIT" ? newAmountMinor : -newAmountMinor;
+  const diff = newDelta - oldDelta;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.entry.update({
+      where: { id },
+      data: {
+        direction,
+        amountMinor: newAmountMinor,
+        note: note || null,
+        occurredAt: occurredAt ?? existing.occurredAt,
+      },
+    });
+    if (diff !== 0n) {
+      await tx.customer.update({
+        where: { id: existing.customerId },
+        data: { balanceMinor: { increment: diff } },
+      });
+    }
+  });
+
+  revalidatePath(`/parties/${existing.customerId}`);
+  revalidatePath("/parties");
+  revalidatePath("/dashboard");
+  return { ok: true, id };
 }
 
 export async function deleteEntry(id: string): Promise<ActionResult> {

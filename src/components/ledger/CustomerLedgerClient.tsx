@@ -2,10 +2,10 @@
 
 import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import { createEntry } from "@/server/actions/entries";
+import { ArrowUpRight, ArrowDownLeft, Trash2 } from "lucide-react";
+import { createEntry, updateEntry, deleteEntry } from "@/server/actions/entries";
 import { CountUp } from "./CountUp";
-import { EntryItem } from "./EntryItem";
+import { EntriesList } from "./EntriesList";
 import { DatePicker } from "./DatePicker";
 import { NumberPad } from "./NumberPad";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CURRENCIES } from "@/lib/currency";
-import { toMinor, formatMoney } from "@/lib/money";
+import { toMinor, fromMinor, formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
 type Entry = {
@@ -25,50 +25,103 @@ type Entry = {
   occurredAt: Date;
 };
 type Customer = { id: string; name: string; currency: string; balance: number };
+type State = { balance: number; totalGave: number; totalGot: number; entries: Entry[] };
+type Action =
+  | { kind: "add"; entry: Entry }
+  | { kind: "edit"; prev: Entry; next: Entry }
+  | { kind: "delete"; entry: Entry };
+
+const sign = (e: Entry) => (e.direction === "CREDIT" ? e.amount : -e.amount);
+
+function reducer(state: State, action: Action): State {
+  switch (action.kind) {
+    case "add": {
+      const e = action.entry;
+      return {
+        balance: state.balance + sign(e),
+        totalGave: state.totalGave + (e.direction === "CREDIT" ? e.amount : 0),
+        totalGot: state.totalGot + (e.direction === "DEBIT" ? e.amount : 0),
+        entries: [e, ...state.entries],
+      };
+    }
+    case "delete": {
+      const e = action.entry;
+      return {
+        balance: state.balance - sign(e),
+        totalGave: state.totalGave - (e.direction === "CREDIT" ? e.amount : 0),
+        totalGot: state.totalGot - (e.direction === "DEBIT" ? e.amount : 0),
+        entries: state.entries.filter((x) => x.id !== e.id),
+      };
+    }
+    case "edit": {
+      const { prev, next } = action;
+      return {
+        balance: state.balance - sign(prev) + sign(next),
+        totalGave:
+          state.totalGave -
+          (prev.direction === "CREDIT" ? prev.amount : 0) +
+          (next.direction === "CREDIT" ? next.amount : 0),
+        totalGot:
+          state.totalGot -
+          (prev.direction === "DEBIT" ? prev.amount : 0) +
+          (next.direction === "DEBIT" ? next.amount : 0),
+        entries: state.entries.map((x) => (x.id === prev.id ? next : x)),
+      };
+    }
+  }
+}
 
 export function CustomerLedgerClient({
   customer,
   entries,
+  totalGave: serverGave,
+  totalGot: serverGot,
 }: {
   customer: Customer;
   entries: Entry[];
+  totalGave: number;
+  totalGot: number;
 }) {
-  // Optimistic state: balance + entries update instantly, then reconcile
-  // with the server data once createEntry + revalidatePath complete.
-  const [optimistic, addOptimistic] = useOptimistic(
-    { balance: customer.balance, entries },
-    (state, action: { entry: Entry; delta: number }) => ({
-      balance: state.balance + action.delta,
-      entries: [action.entry, ...state.entries],
-    }),
+  const [optimistic, applyOptimistic] = useOptimistic(
+    { balance: customer.balance, totalGave: serverGave, totalGot: serverGot, entries },
+    reducer,
   );
 
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"add" | "edit">("add");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [direction, setDirection] = useState<"CREDIT" | "DEBIT">("CREDIT");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [date, setDate] = useState<Date>(() => new Date());
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const cur = customer.currency;
+  const symbol = CURRENCIES[cur]?.symbol ?? "";
+  const gave = direction === "CREDIT";
   const positive = optimistic.balance >= 0;
   const settled = optimistic.balance === 0;
-  const symbol = CURRENCIES[customer.currency]?.symbol ?? "";
-  const gave = direction === "CREDIT";
 
-  const totalGave = optimistic.entries.reduce(
-    (s, e) => (e.direction === "CREDIT" ? s + e.amount : s),
-    0,
-  );
-  const totalGot = optimistic.entries.reduce(
-    (s, e) => (e.direction === "DEBIT" ? s + e.amount : s),
-    0,
-  );
-
-  function openSheet(d: "CREDIT" | "DEBIT") {
+  function openAdd(d: "CREDIT" | "DEBIT") {
+    setMode("add");
+    setEditingId(null);
     setDirection(d);
     setAmount("");
     setNote("");
     setDate(new Date());
+    setConfirmDelete(false);
+    setOpen(true);
+  }
+
+  function openEdit(e: Entry) {
+    setMode("edit");
+    setEditingId(e.id);
+    setDirection(e.direction);
+    setAmount(String(fromMinor(e.amount, cur)));
+    setNote(e.note ?? "");
+    setDate(e.occurredAt);
+    setConfirmDelete(false);
     setOpen(true);
   }
 
@@ -76,36 +129,53 @@ export function CustomerLedgerClient({
     e.preventDefault();
     const amt = Number(amount);
     if (!amt || amt <= 0) return;
+    const amountMinor = toMinor(amt, cur);
+    setOpen(false);
 
-    const amountMinor = toMinor(amt, customer.currency);
-    const delta = direction === "CREDIT" ? amountMinor : -amountMinor;
-    const tmp: Entry = {
-      id: `tmp-${Date.now()}`,
-      direction,
-      amount: amountMinor,
-      currency: customer.currency,
-      note: note || null,
-      occurredAt: date,
-    };
+    if (mode === "add") {
+      const tmp: Entry = {
+        id: `tmp-${Date.now()}`,
+        direction,
+        amount: amountMinor,
+        currency: cur,
+        note: note || null,
+        occurredAt: date,
+      };
+      startTransition(async () => {
+        applyOptimistic({ kind: "add", entry: tmp });
+        const res = await createEntry({ customerId: customer.id, direction, amount: amt, note, occurredAt: date });
+        if (res.ok) toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
+        else toast.error(res.error);
+      });
+    } else if (editingId) {
+      const prev = optimistic.entries.find((x) => x.id === editingId);
+      if (!prev) return;
+      const next: Entry = { ...prev, direction, amount: amountMinor, note: note || null, occurredAt: date };
+      startTransition(async () => {
+        applyOptimistic({ kind: "edit", prev, next });
+        const res = await updateEntry({ id: editingId, direction, amount: amt, note, occurredAt: date });
+        if (res.ok) toast.success("Entry updated");
+        else toast.error(res.error);
+      });
+    }
+  }
 
+  function onDelete() {
+    if (!editingId) return;
+    const prev = optimistic.entries.find((x) => x.id === editingId);
+    if (!prev) return;
     setOpen(false);
     startTransition(async () => {
-      addOptimistic({ entry: tmp, delta });
-      const res = await createEntry({
-        customerId: customer.id,
-        direction,
-        amount: amt,
-        note,
-        occurredAt: date,
-      });
-      if (res.ok) toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
+      applyOptimistic({ kind: "delete", entry: prev });
+      const res = await deleteEntry(editingId);
+      if (res.ok) toast.success("Entry deleted");
       else toast.error(res.error);
     });
   }
 
   return (
     <>
-      {/* Balance + totals in one card (optimistic) */}
+      {/* Balance + totals in one card (optimistic, server-aggregated) */}
       <section
         className={`rounded-3xl p-5 text-white ${
           settled ? "bg-slate-700" : positive ? "bg-emerald-600" : "bg-red-600"
@@ -116,33 +186,28 @@ export function CustomerLedgerClient({
         </p>
         <CountUp
           minor={Math.abs(optimistic.balance)}
-          currency={customer.currency}
+          currency={cur}
           className="mt-1 block font-extrabold tracking-tight"
           baseSize={30}
           minSize={16}
         />
-
         <div className="mt-4 grid grid-cols-2 border-t border-white/20 pt-4">
           <div>
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">
               <ArrowUpRight className="h-3.5 w-3.5" /> Total you gave
             </div>
-            <div className="mt-0.5 text-sm font-extrabold">
-              {formatMoney(totalGave, customer.currency)}
-            </div>
+            <div className="mt-0.5 text-sm font-extrabold">{formatMoney(optimistic.totalGave, cur)}</div>
           </div>
           <div className="border-l border-white/20 pl-4">
             <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">
               <ArrowDownLeft className="h-3.5 w-3.5" /> Total you got
             </div>
-            <div className="mt-0.5 text-sm font-extrabold">
-              {formatMoney(totalGot, customer.currency)}
-            </div>
+            <div className="mt-0.5 text-sm font-extrabold">{formatMoney(optimistic.totalGot, cur)}</div>
           </div>
         </div>
       </section>
 
-      {/* Entries (optimistic) */}
+      {/* Entries (virtualized) */}
       <section className="mt-5">
         <h2 className="mb-1 text-sm font-bold">Entries</h2>
         {optimistic.entries.length === 0 ? (
@@ -154,46 +219,62 @@ export function CustomerLedgerClient({
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-border/60">
-            {optimistic.entries.map((en) => (
-              <EntryItem key={en.id} entry={en} />
-            ))}
-          </div>
+          <EntriesList entries={optimistic.entries} onSelect={openEdit} />
         )}
       </section>
 
-      {/* Thumb-zone dual CTA → opens the inline add sheet */}
+      {/* Thumb-zone dual CTA */}
       <div className="fixed bottom-[84px] left-1/2 z-20 grid w-full max-w-[480px] -translate-x-1/2 grid-cols-2 gap-3 px-5">
         <button
-          onClick={() => openSheet("DEBIT")}
+          onClick={() => openAdd("DEBIT")}
           className="flex items-center justify-center gap-1.5 rounded-2xl bg-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 active:scale-[.98]"
         >
           <ArrowDownLeft className="h-4 w-4" /> You got
         </button>
         <button
-          onClick={() => openSheet("CREDIT")}
+          onClick={() => openAdd("CREDIT")}
           className="flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 active:scale-[.98]"
         >
           <ArrowUpRight className="h-4 w-4" /> You gave
         </button>
       </div>
 
-      {/* Add-entry bottom sheet */}
+      {/* Add / Edit sheet */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent>
           <SheetTitle className={gave ? "text-emerald-600" : "text-red-600"}>
-            {gave ? "You gave" : "You got"}
+            {mode === "edit" ? "Edit entry" : gave ? "You gave" : "You got"}
           </SheetTitle>
+
           <form onSubmit={submit} className="mt-2 space-y-3">
+            {/* Direction toggle */}
+            <div className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setDirection("CREDIT")}
+                className={cn(
+                  "flex h-9 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition",
+                  gave ? "bg-card text-emerald-600 shadow-sm" : "text-muted-foreground",
+                )}
+              >
+                <ArrowUpRight className="h-4 w-4" /> You gave
+              </button>
+              <button
+                type="button"
+                onClick={() => setDirection("DEBIT")}
+                className={cn(
+                  "flex h-9 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold transition",
+                  !gave ? "bg-card text-red-600 shadow-sm" : "text-muted-foreground",
+                )}
+              >
+                <ArrowDownLeft className="h-4 w-4" /> You got
+              </button>
+            </div>
+
             <div className="rounded-2xl border bg-muted/40 px-4 py-3 text-center">
               <div className="flex items-center justify-center gap-1">
                 <span className="text-2xl font-bold text-muted-foreground">{symbol}</span>
-                <span
-                  className={cn(
-                    "text-4xl font-extrabold tracking-tight",
-                    !amount && "text-muted-foreground/40",
-                  )}
-                >
+                <span className={cn("text-4xl font-extrabold tracking-tight", !amount && "text-muted-foreground/40")}>
                   {amount || "0"}
                 </span>
               </div>
@@ -207,12 +288,7 @@ export function CustomerLedgerClient({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="note">Note</Label>
-              <Input
-                id="note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="optional"
-              />
+              <Input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="optional" />
             </div>
 
             <Button
@@ -222,8 +298,22 @@ export function CustomerLedgerClient({
               disabled={pending || !amount}
               className="w-full"
             >
-              Save entry
+              {mode === "edit" ? "Save changes" : "Save entry"}
             </Button>
+
+            {mode === "edit" && (
+              <button
+                type="button"
+                onClick={() => (confirmDelete ? onDelete() : setConfirmDelete(true))}
+                className={cn(
+                  "flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition",
+                  confirmDelete ? "bg-destructive/10 text-destructive" : "text-muted-foreground",
+                )}
+              >
+                <Trash2 className="h-4 w-4" />
+                {confirmDelete ? "Tap again to delete" : "Delete entry"}
+              </button>
+            )}
           </form>
         </SheetContent>
       </Sheet>
