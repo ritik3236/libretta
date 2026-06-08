@@ -10,23 +10,25 @@ Next.js 15 (App Router) · TypeScript · Tailwind v4 · Framer Motion · lucide-
 
 ## Getting started
 
+> Uses **pnpm** (via Corepack). Enable it once with `corepack enable`.
+
 ```bash
 # 1. Install
-npm install
+pnpm install
 
 # 2. Configure env  (a .env.local is already scaffolded for you)
 #    ⚠️ ROTATE the RDS password & Clerk secret that were shared in chat.
 
 # 3. Push the schema to your MySQL database
-npm run db:push          # or: npm run db:migrate  (creates migration history)
+pnpm db:push          # or: pnpm db:migrate  (creates migration history)
 
 # 4. (optional) Seed demo data
 #    To see demo data while logged in, set your Clerk user id first:
-#    SEED_USER_ID=user_xxx npm run db:seed
-npm run db:seed
+#    SEED_USER_ID=user_xxx pnpm db:seed
+pnpm db:seed
 
 # 5. Run
-npm run dev              # http://localhost:3000
+pnpm dev              # http://localhost:3000
 ```
 
 ## Environment variables

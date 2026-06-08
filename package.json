@@ -2,6 +2,10 @@
   "name": "libretta",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "engines": {
+    "node": ">=18.18"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
