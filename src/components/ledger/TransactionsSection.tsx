@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { startOfDay, endOfDay, format } from "date-fns";
-import { Filter, Download, Check } from "lucide-react";
+import { Filter, Download, Check, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "./DatePicker";
@@ -44,6 +44,7 @@ export function TransactionsSection({
   const [customerIds, setCustomerIds] = useState<string[]>([]);
   const [from, setFrom] = useState<Date | null>(null);
   const [to, setTo] = useState<Date | null>(null);
+  const [partyOpen, setPartyOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const fromTs = from ? startOfDay(from).getTime() : null;
@@ -194,50 +195,64 @@ export function TransactionsSection({
 
             {customers.length > 0 && (
               <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Parties{customerIds.length > 0 ? ` · ${customerIds.length}` : ""}
-                  </p>
-                  {customerIds.length > 0 && (
-                    <button
-                      onClick={() => setCustomerIds([])}
-                      className="text-xs font-semibold text-primary"
-                    >
-                      Clear
-                    </button>
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Parties</p>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setPartyOpen((o) => !o)}
+                    className="flex h-11 w-full items-center justify-between rounded-xl border border-input bg-background px-4 text-sm shadow-sm outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
+                  >
+                    <span className={cn("truncate", customerIds.length === 0 && "text-muted-foreground")}>
+                      {customerIds.length === 0
+                        ? "All parties"
+                        : customerIds.length === 1
+                          ? customers.find((c) => c.id === customerIds[0])?.name ?? "1 party"
+                          : `${customerIds.length} parties`}
+                    </span>
+                    <ChevronDown
+                      className={cn("h-4 w-4 shrink-0 opacity-50 transition", partyOpen && "rotate-180")}
+                    />
+                  </button>
+
+                  {partyOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setPartyOpen(false)} />
+                      <div className="absolute left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg">
+                        {customerIds.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setCustomerIds([])}
+                            className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-semibold text-primary hover:bg-accent"
+                          >
+                            Clear selection
+                          </button>
+                        )}
+                        {customers.map((c) => {
+                          const on = customerIds.includes(c.id);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => toggleParty(c.id)}
+                              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                            >
+                              <span className={cn("truncate", on && "font-semibold")}>{c.name}</span>
+                              <span
+                                className={cn(
+                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                                  on
+                                    ? "border-primary bg-primary text-primary-foreground"
+                                    : "border-input",
+                                )}
+                              >
+                                {on && <Check className="h-3 w-3" />}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
-                </div>
-                <div className="max-h-44 divide-y divide-border/60 overflow-y-auto rounded-xl border">
-                  {customers.map((c) => {
-                    const on = customerIds.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => toggleParty(c.id)}
-                        className="flex h-11 w-full items-center justify-between px-3.5 text-sm transition active:bg-muted/40"
-                      >
-                        <span
-                          className={cn(
-                            "truncate",
-                            on ? "font-semibold text-foreground" : "text-muted-foreground",
-                          )}
-                        >
-                          {c.name}
-                        </span>
-                        <span
-                          className={cn(
-                            "flex h-5 w-5 shrink-0 items-center justify-center rounded-md border",
-                            on
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-input",
-                          )}
-                        >
-                          {on && <Check className="h-3.5 w-3.5" />}
-                        </span>
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
             )}

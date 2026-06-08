@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CURRENCIES } from "@/lib/currency";
-import { toMinor } from "@/lib/money";
+import { toMinor, formatMoney } from "@/lib/money";
 
 type Entry = {
   id: string;
@@ -52,6 +52,15 @@ export function CustomerLedgerClient({
   const settled = optimistic.balance === 0;
   const symbol = CURRENCIES[customer.currency]?.symbol ?? "";
   const gave = direction === "CREDIT";
+
+  const totalGave = optimistic.entries.reduce(
+    (s, e) => (e.direction === "CREDIT" ? s + e.amount : s),
+    0,
+  );
+  const totalGot = optimistic.entries.reduce(
+    (s, e) => (e.direction === "DEBIT" ? s + e.amount : s),
+    0,
+  );
 
   function openSheet(d: "CREDIT" | "DEBIT") {
     setDirection(d);
@@ -94,7 +103,7 @@ export function CustomerLedgerClient({
 
   return (
     <>
-      {/* Balance hero (optimistic) */}
+      {/* Balance + totals in one card (optimistic) */}
       <section
         className={`rounded-3xl p-5 text-white ${
           settled ? "bg-slate-700" : positive ? "bg-emerald-600" : "bg-red-600"
@@ -110,6 +119,25 @@ export function CustomerLedgerClient({
           baseSize={30}
           minSize={16}
         />
+
+        <div className="mt-4 grid grid-cols-2 border-t border-white/20 pt-4">
+          <div>
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">
+              <ArrowUpRight className="h-3.5 w-3.5" /> Total you gave
+            </div>
+            <div className="mt-0.5 text-sm font-extrabold">
+              {formatMoney(totalGave, customer.currency)}
+            </div>
+          </div>
+          <div className="border-l border-white/20 pl-4">
+            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">
+              <ArrowDownLeft className="h-3.5 w-3.5" /> Total you got
+            </div>
+            <div className="mt-0.5 text-sm font-extrabold">
+              {formatMoney(totalGot, customer.currency)}
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Entries (optimistic) */}
