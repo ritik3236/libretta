@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ledger/DatePicker";
+import { NumberPad } from "@/components/ledger/NumberPad";
 import {
   Select,
   SelectContent,
@@ -110,17 +111,18 @@ export function AddEntryForm({
         <div className="text-xs font-semibold text-muted-foreground">Amount</div>
         <div className="mt-1 flex items-center justify-center gap-1">
           <span className="text-2xl font-bold text-muted-foreground">{symbol}</span>
-          <input
-            autoFocus
-            required
-            value={amount}
-            onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-            inputMode="decimal"
-            placeholder="0"
-            className="w-44 bg-transparent text-center text-4xl font-extrabold tracking-tight outline-none"
-          />
+          <span
+            className={cn(
+              "text-4xl font-extrabold tracking-tight",
+              !amount && "text-muted-foreground/40",
+            )}
+          >
+            {amount || "0"}
+          </span>
         </div>
       </div>
+
+      <NumberPad value={amount} onChange={setAmount} />
 
       {/* Customer */}
       <div className="space-y-1.5">

@@ -17,6 +17,10 @@ export function NumberPad({
   onChange: (v: string) => void;
 }) {
   function press(k: string) {
+    // Haptic feedback (Android/supported browsers; iOS Safari ignores it).
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(10);
+    }
     if (k === "del") {
       onChange(value.slice(0, -1));
       return;
