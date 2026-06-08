@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CURRENCIES } from "@/lib/currency";
 import { toMinor, formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
 
 type Entry = {
   id: string;
