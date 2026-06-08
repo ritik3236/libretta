@@ -56,7 +56,7 @@ export function BalanceTrendChart({
             padding: "6px 10px",
             boxShadow: "0 6px 20px -8px rgba(0,0,0,.25)",
           }}
-          formatter={(value: number) => [formatMoney(value * 100, currency), "Net"]}
+          formatter={(value) => [formatMoney(Number(value) * 100, currency), "Net"]}
         />
         <Area
           type="monotone"
