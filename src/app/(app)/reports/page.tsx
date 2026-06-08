@@ -2,13 +2,18 @@ import Link from "next/link";
 import { Download } from "lucide-react";
 import { requireUser } from "@/server/auth";
 import { getDashboard } from "@/server/queries/dashboard";
+import { getBalanceTrend } from "@/server/queries/trend";
 import { AppHeader } from "@/components/nav/AppHeader";
+import { BalanceTrendChart } from "@/components/charts/BalanceTrendChart";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
 
 export default async function ReportsPage() {
   const userId = await requireUser();
-  const { totals, customerCount } = await getDashboard(userId);
+  const [{ totals, customerCount }, trend] = await Promise.all([
+    getDashboard(userId),
+    getBalanceTrend(userId),
+  ]);
 
   return (
     <>
@@ -25,6 +30,18 @@ export default async function ReportsPage() {
       />
 
       <div className="px-5 pt-4">
+        {trend && trend.points.length > 1 && (
+          <section className="mb-4 rounded-3xl border bg-card p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-bold">Net balance trend</h2>
+              <span className="text-[11px] font-semibold text-muted-foreground">
+                {trend.currency} · last {trend.points.length} mo
+              </span>
+            </div>
+            <BalanceTrendChart points={trend.points} currency={trend.currency} />
+          </section>
+        )}
+
         <section className="space-y-3">
           {totals.length === 0 && (
             <p className="rounded-2xl border border-dashed p-8 text-center text-sm text-muted-foreground">

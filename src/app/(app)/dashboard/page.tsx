@@ -3,20 +3,14 @@ import { UserButton } from "@clerk/nextjs";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { requireUser } from "@/server/auth";
 import { getDashboard } from "@/server/queries/dashboard";
-import { getBalanceTrend } from "@/server/queries/trend";
 import { AppHeader } from "@/components/nav/AppHeader";
 import { CountUp } from "@/components/ledger/CountUp";
 import { TransactionsSection } from "@/components/ledger/TransactionsSection";
-import { BalanceTrendChart } from "@/components/charts/BalanceTrendChart";
 import { formatMoney } from "@/lib/money";
 
 export default async function DashboardPage() {
   const userId = await requireUser();
-  const [data, user, trend] = await Promise.all([
-    getDashboard(userId),
-    currentUser(),
-    getBalanceTrend(userId),
-  ]);
+  const [data, user] = await Promise.all([getDashboard(userId), currentUser()]);
 
   const firstName = user?.firstName ?? "there";
   const businessName = data.businessName;
@@ -89,19 +83,6 @@ export default async function DashboardPage() {
                 </span>
               </div>
             ))}
-          </section>
-        )}
-
-        {/* Balance trend */}
-        {trend && trend.points.length > 1 && (
-          <section className="mt-4 rounded-3xl border bg-card p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-bold">Net balance trend</h2>
-              <span className="text-[11px] font-semibold text-muted-foreground">
-                {trend.currency} · last {trend.points.length} mo
-              </span>
-            </div>
-            <BalanceTrendChart points={trend.points} currency={trend.currency} />
           </section>
         )}
 
