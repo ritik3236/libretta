@@ -19,10 +19,7 @@ export default async function DashboardPage() {
   ]);
 
   const firstName = user?.firstName ?? "there";
-  const businessName =
-    typeof user?.publicMetadata?.businessName === "string"
-      ? user.publicMetadata.businessName
-      : null;
+  const businessName = data.businessName;
 
   const base = data.baseCurrency;
   const baseTotal =

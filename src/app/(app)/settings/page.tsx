@@ -4,7 +4,7 @@ import { Download, ShieldCheck } from "lucide-react";
 import { requireUser } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { AppHeader } from "@/components/nav/AppHeader";
-import { CURRENCIES } from "@/lib/currency";
+import { ProfileForm } from "@/components/ledger/ProfileForm";
 
 export default async function SettingsPage() {
   const userId = await requireUser();
@@ -30,15 +30,14 @@ export default async function SettingsPage() {
           </div>
         </section>
 
-        <section className="mt-4 space-y-2">
-          <div className="flex items-center justify-between rounded-2xl border bg-card px-4 py-3.5">
-            <span className="text-sm font-semibold text-foreground/80">Base currency</span>
-            <span className="text-sm font-bold">
-              {CURRENCIES[dbUser?.baseCurrency ?? "INR"]?.symbol ?? ""}{" "}
-              {dbUser?.baseCurrency ?? "INR"}
-            </span>
-          </div>
+        <section className="mt-5">
+          <ProfileForm
+            businessName={dbUser?.businessName ?? ""}
+            baseCurrency={dbUser?.baseCurrency ?? "INR"}
+          />
+        </section>
 
+        <section className="mt-5 space-y-2">
           <a
             href="/api/export/csv"
             className="flex items-center justify-between rounded-2xl border bg-card px-4 py-3.5 transition active:scale-[.99]"

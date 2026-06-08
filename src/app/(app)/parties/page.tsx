@@ -3,7 +3,7 @@ import { UserPlus } from "lucide-react";
 import { requireUser } from "@/server/auth";
 import { listCustomers } from "@/server/queries/customers";
 import { AppHeader } from "@/components/nav/AppHeader";
-import { CustomerCard } from "@/components/ledger/CustomerCard";
+import { PartiesList } from "@/components/ledger/PartiesList";
 import { Button } from "@/components/ui/button";
 
 export default async function PartiesPage() {
@@ -33,7 +33,7 @@ export default async function PartiesPage() {
             </Button>
           </div>
         ) : (
-          customers.map((c) => <CustomerCard key={c.id} customer={c} />)
+          <PartiesList customers={customers} />
         )}
       </div>
     </>

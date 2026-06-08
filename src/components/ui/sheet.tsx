@@ -19,7 +19,7 @@ function SheetContent({
       <DialogPrimitive.Content
         aria-describedby={undefined}
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[480px] rounded-t-3xl border-t bg-card p-5 pb-[max(20px,env(safe-area-inset-bottom))] shadow-2xl",
+          "fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[88vh] w-full max-w-[480px] flex-col overflow-y-auto overscroll-contain rounded-t-3xl border-t bg-card p-5 pb-[max(20px,env(safe-area-inset-bottom))] shadow-2xl",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom data-[state=open]:duration-300",
           className,
         )}

@@ -196,64 +196,59 @@ export function TransactionsSection({
             {customers.length > 0 && (
               <div>
                 <p className="mb-2 text-xs font-semibold text-muted-foreground">Parties</p>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setPartyOpen((o) => !o)}
-                    className="flex h-11 w-full items-center justify-between rounded-xl border border-input bg-background px-4 text-sm shadow-sm outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
-                  >
-                    <span className={cn("truncate", customerIds.length === 0 && "text-muted-foreground")}>
-                      {customerIds.length === 0
-                        ? "All parties"
-                        : customerIds.length === 1
-                          ? customers.find((c) => c.id === customerIds[0])?.name ?? "1 party"
-                          : `${customerIds.length} parties`}
-                    </span>
-                    <ChevronDown
-                      className={cn("h-4 w-4 shrink-0 opacity-50 transition", partyOpen && "rotate-180")}
-                    />
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => setPartyOpen((o) => !o)}
+                  className="flex h-11 w-full items-center justify-between rounded-xl border border-input bg-background px-4 text-sm shadow-sm outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
+                >
+                  <span className={cn("truncate", customerIds.length === 0 && "text-muted-foreground")}>
+                    {customerIds.length === 0
+                      ? "All parties"
+                      : customerIds.length === 1
+                        ? customers.find((c) => c.id === customerIds[0])?.name ?? "1 party"
+                        : `${customerIds.length} parties`}
+                  </span>
+                  <ChevronDown
+                    className={cn("h-4 w-4 shrink-0 opacity-50 transition", partyOpen && "rotate-180")}
+                  />
+                </button>
 
-                  {partyOpen && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setPartyOpen(false)} />
-                      <div className="absolute left-0 right-0 z-50 mt-1.5 max-h-56 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg">
-                        {customerIds.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setCustomerIds([])}
-                            className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-semibold text-primary hover:bg-accent"
+                {partyOpen && (
+                  <div className="mt-1.5 max-h-56 overflow-y-auto overscroll-contain rounded-xl border bg-popover p-1">
+                    {customerIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomerIds([])}
+                        className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-semibold text-primary hover:bg-accent"
+                      >
+                        Clear selection
+                      </button>
+                    )}
+                    {customers.map((c) => {
+                      const on = customerIds.includes(c.id);
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => toggleParty(c.id)}
+                          className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
+                        >
+                          <span className={cn("truncate", on && "font-semibold")}>{c.name}</span>
+                          <span
+                            className={cn(
+                              "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                              on
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input",
+                            )}
                           >
-                            Clear selection
-                          </button>
-                        )}
-                        {customers.map((c) => {
-                          const on = customerIds.includes(c.id);
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => toggleParty(c.id)}
-                              className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
-                            >
-                              <span className={cn("truncate", on && "font-semibold")}>{c.name}</span>
-                              <span
-                                className={cn(
-                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border",
-                                  on
-                                    ? "border-primary bg-primary text-primary-foreground"
-                                    : "border-input",
-                                )}
-                              >
-                                {on && <Check className="h-3 w-3" />}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
+                            {on && <Check className="h-3 w-3" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

@@ -21,6 +21,7 @@ export type RecentEntry = {
 
 export type DashboardData = {
   baseCurrency: string;
+  businessName: string | null;
   totals: CurrencyTotal[];
   recentEntries: RecentEntry[];
   customers: { id: string; name: string }[];
@@ -30,7 +31,10 @@ export type DashboardData = {
 export async function getDashboard(userId: string): Promise<DashboardData> {
   const [customers, user, recentRows] = await Promise.all([
     listCustomers(userId),
-    prisma.user.findUnique({ where: { id: userId }, select: { baseCurrency: true } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { baseCurrency: true, businessName: true },
+    }),
     prisma.entry.findMany({
       where: { userId },
       orderBy: { occurredAt: "desc" },
@@ -66,6 +70,7 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
 
   return {
     baseCurrency: user?.baseCurrency ?? "INR",
+    businessName: user?.businessName ?? null,
     totals,
     recentEntries,
     customers: customers.map((c) => ({ id: c.id, name: c.name })),
