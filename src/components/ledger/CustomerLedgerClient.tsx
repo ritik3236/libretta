@@ -198,20 +198,18 @@ export function CustomerLedgerClient({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>Date</Label>
-                <DatePicker value={date} onChange={setDate} max={new Date()} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="note">Note</Label>
-                <Input
-                  id="note"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="optional"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label>Date</Label>
+              <DatePicker value={date} onChange={setDate} max={new Date()} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="note">Note</Label>
+              <Input
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="optional"
+              />
             </div>
 
             <Button

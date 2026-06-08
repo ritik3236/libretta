@@ -267,7 +267,7 @@ export function TransactionsSection({
                   </button>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
                 <DatePicker
                   value={from}
                   onChange={setFrom}
