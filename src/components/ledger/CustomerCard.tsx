@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { formatAbs } from "@/lib/money";
 import { initials } from "@/lib/utils";
-import { CURRENCIES } from "@/lib/currency";
+import { getCurrencyMeta } from "@/lib/currency";
 import { formatDistanceToNow } from "date-fns";
 
 export function CustomerCard({
@@ -32,7 +32,7 @@ export function CustomerCard({
           {customer.name}
           {showBadge && (
             <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
-              {CURRENCIES[customer.currency]?.code ?? customer.currency}
+              {getCurrencyMeta(customer.currency)?.code ?? customer.currency}
             </span>
           )}
         </div>

@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { requireUser } from "@/server/auth";
 import { getCustomer } from "@/server/queries/customers";
+import { getCurrencies } from "@/server/queries/currencies";
 import { formatMoney, formatAbs } from "@/lib/money";
-import { format } from "date-fns";
+import { formatDateIST } from "@/lib/datetime";
 import { PrintButton } from "./PrintButton";
 import { appConfig, appTitle } from "@/lib/app-config";
 
@@ -13,6 +14,7 @@ export default async function StatementPage({
 }) {
   const { id } = await params;
   const userId = await requireUser();
+  await getCurrencies(); // hydrate currency registry for money formatting
   const customer = await getCustomer(userId, id);
   if (!customer) notFound();
 
@@ -39,7 +41,7 @@ export default async function StatementPage({
         </div>
         <div className="text-right text-xs text-slate-500">
           <p>Generated</p>
-          <p className="font-semibold text-slate-700">{format(new Date(), "d MMM yyyy")}</p>
+          <p className="font-semibold text-slate-700">{formatDateIST(new Date())}</p>
         </div>
       </div>
 
@@ -72,7 +74,7 @@ export default async function StatementPage({
         <tbody>
           {rows.map((r) => (
             <tr key={r.id} className="border-b border-slate-100">
-              <td className="py-2 text-slate-500">{format(r.occurredAt, "d MMM yy")}</td>
+              <td className="py-2 text-slate-500">{formatDateIST(r.occurredAt)}</td>
               <td className="py-2">{r.note || "—"}</td>
               <td className="py-2 text-right text-emerald-600">
                 {r.direction === "CREDIT" ? formatMoney(r.amount, r.currency) : ""}

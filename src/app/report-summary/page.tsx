@@ -1,8 +1,9 @@
-import { format } from "date-fns";
 import { requireUser } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { getReports } from "@/server/queries/reports";
+import { getCurrencies } from "@/server/queries/currencies";
 import { formatMoney, formatAbs } from "@/lib/money";
+import { formatDateIST, istDayStartUTC, istDayEndUTC } from "@/lib/datetime";
 import { appConfig, appTitle } from "@/lib/app-config";
 import { PrintButton } from "../statement/[id]/PrintButton";
 
@@ -13,18 +14,19 @@ export default async function ReportSummaryPage({
 }) {
   const sp = await searchParams;
   const userId = await requireUser();
+  await getCurrencies(); // hydrate currency registry for money formatting
 
   const dbUser = await prisma.user.findUnique({
     where: { id: userId },
     select: { baseCurrency: true, businessName: true },
   });
   const currency = sp.currency ?? dbUser?.baseCurrency ?? "INR";
-  const from = sp.from ? new Date(`${sp.from}T00:00:00`) : new Date(0);
-  const to = sp.to ? new Date(`${sp.to}T23:59:59`) : new Date();
+  const from = sp.from ? istDayStartUTC(sp.from) : new Date(0);
+  const to = sp.to ? istDayEndUTC(sp.to) : new Date();
 
   const data = await getReports(userId, currency, from, to);
   const rangeLabel = sp.from || sp.to
-    ? `${sp.from ? format(from, "d MMM yyyy") : "start"} – ${format(to, "d MMM yyyy")}`
+    ? `${sp.from ? formatDateIST(from) : "start"} – ${formatDateIST(to)}`
     : "All time";
 
   return (

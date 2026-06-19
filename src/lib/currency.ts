@@ -1,22 +1,47 @@
-export type CurrencyMeta = { code: string; symbol: string; decimals: number; label: string };
-
-export const CURRENCIES: Record<string, CurrencyMeta> = {
-  INR: { code: "INR", symbol: "₹", decimals: 2, label: "Indian Rupee" },
-  USD: { code: "USD", symbol: "$", decimals: 2, label: "US Dollar" },
-  EUR: { code: "EUR", symbol: "€", decimals: 2, label: "Euro" },
-  GBP: { code: "GBP", symbol: "£", decimals: 2, label: "British Pound" },
-  AED: { code: "AED", symbol: "د.إ", decimals: 2, label: "UAE Dirham" },
-  AUD: { code: "AUD", symbol: "A$", decimals: 2, label: "Australian Dollar" },
-  CAD: { code: "CAD", symbol: "C$", decimals: 2, label: "Canadian Dollar" },
-  SGD: { code: "SGD", symbol: "S$", decimals: 2, label: "Singapore Dollar" },
+export type CurrencyMeta = {
+  code: string;
+  symbol: string;
+  decimals: number;
+  label: string;
+  isActive?: boolean;
 };
 
-export const CURRENCY_LIST = Object.values(CURRENCIES);
+/**
+ * Currency metadata is now sourced from the DB (lb_currencies), but money
+ * formatting (money.ts) and many client components read it SYNCHRONOUSLY at
+ * render time. So we keep a small in-memory registry that is hydrated before
+ * render:
+ *   - on the server, by `getCurrencies()` (src/server/queries/currencies.ts),
+ *     called in async layouts / actions / queries before any money math;
+ *   - on the client, by <CurrencyProvider> synchronously in its render body.
+ *
+ * The `?? 2` decimals fallback is the safety net for the brief window before
+ * hydration (all launch currencies are 2-decimal, so math is unaffected).
+ */
+let _registry: Record<string, CurrencyMeta> = {};
+
+export function hydrateCurrencies(list: CurrencyMeta[]): void {
+  _registry = Object.fromEntries(list.map((c) => [c.code, c]));
+}
+
+export function getCurrencyMeta(code: string): CurrencyMeta | undefined {
+  return _registry[code];
+}
+
+/** All currencies currently in the registry. */
+export function currencyList(): CurrencyMeta[] {
+  return Object.values(_registry);
+}
+
+/** Active currencies only — for user-facing pickers. */
+export function activeCurrencyList(): CurrencyMeta[] {
+  return Object.values(_registry).filter((c) => c.isActive !== false);
+}
 
 export function currencyDecimals(code: string): number {
-  return CURRENCIES[code]?.decimals ?? 2;
+  return _registry[code]?.decimals ?? 2;
 }
 
 export function isSupportedCurrency(code: string): boolean {
-  return code in CURRENCIES;
+  return code in _registry;
 }

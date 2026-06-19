@@ -1,16 +1,17 @@
-import { currentUser } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
-import { Download, ShieldCheck } from "lucide-react";
-import { requireUser } from "@/server/auth";
+import Link from "next/link";
+import { Download, ShieldCheck, ShieldAlert } from "lucide-react";
+import { requireUser, getAuthUserInfo, isPrivileged } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { AppHeader } from "@/components/nav/AppHeader";
+import { AccountButton } from "@/components/nav/AccountButton";
 import { ProfileForm } from "@/components/ledger/ProfileForm";
 
 export default async function SettingsPage() {
   const userId = await requireUser();
-  const [user, dbUser] = await Promise.all([
-    currentUser(),
+  const [user, dbUser, admin] = await Promise.all([
+    getAuthUserInfo(),
     prisma.user.findUnique({ where: { id: userId } }),
+    isPrivileged(),
   ]);
 
   return (
@@ -19,13 +20,13 @@ export default async function SettingsPage() {
 
       <div className="px-5 pt-4">
         <section className="flex items-center gap-3 rounded-2xl border bg-muted/40 p-4">
-          <UserButton afterSignOutUrl="/" />
+          <AccountButton />
           <div className="min-w-0">
             <p className="truncate text-sm font-bold">
-              {[user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Account"}
+              {[user.firstName, user.lastName].filter(Boolean).join(" ") || "Account"}
             </p>
             <p className="truncate text-xs text-muted-foreground">
-              {user?.primaryEmailAddress?.emailAddress}
+              {user.email}
             </p>
           </div>
         </section>
@@ -46,6 +47,17 @@ export default async function SettingsPage() {
               <Download className="h-4 w-4 text-muted-foreground" /> Export all data (CSV)
             </span>
           </a>
+
+          {admin && (
+            <Link
+              href="/admin"
+              className="flex items-center justify-between rounded-2xl border bg-card px-4 py-3.5 transition active:scale-[.99]"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold text-foreground/80">
+                <ShieldAlert className="h-4 w-4 text-muted-foreground" /> Admin panel
+              </span>
+            </Link>
+          )}
 
           <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
             <ShieldCheck className="h-4 w-4" /> Your data is private to your account.

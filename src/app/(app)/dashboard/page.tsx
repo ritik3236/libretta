@@ -1,7 +1,6 @@
-import { currentUser } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import { requireUser } from "@/server/auth";
+import { requireUser, getAuthUserInfo } from "@/server/auth";
+import { AccountButton } from "@/components/nav/AccountButton";
 import { getDashboard } from "@/server/queries/dashboard";
 import { AppHeader } from "@/components/nav/AppHeader";
 import { CountUp } from "@/components/ledger/CountUp";
@@ -10,9 +9,9 @@ import { formatMoney } from "@/lib/money";
 
 export default async function DashboardPage() {
   const userId = await requireUser();
-  const [data, user] = await Promise.all([getDashboard(userId), currentUser()]);
+  const [data, user] = await Promise.all([getDashboard(userId), getAuthUserInfo()]);
 
-  const firstName = user?.firstName ?? "there";
+  const firstName = user.firstName ?? "there";
   const businessName = data.businessName;
 
   const base = data.baseCurrency;
@@ -32,7 +31,7 @@ export default async function DashboardPage() {
             </h1>
           </div>
         }
-        right={<UserButton afterSignOutUrl="/" />}
+        right={<AccountButton />}
       />
 
       <div className="px-5 pt-4">

@@ -16,8 +16,11 @@ model User {
   name         String?
   businessName String?
   baseCurrency String     @default("INR")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  // Admin-toggleable: may this user create their own parties (in addition to
+  // any the admin assigns)? Default true preserves existing behavior.
+  canCreateParties Boolean @default(true)
+  createdAt    DateTime   @default(now()) @db.Timestamp(3)
+  updatedAt    DateTime   @updatedAt @db.Timestamp(3)
   customers    Customer[]
   entries      Entry[]
 
@@ -33,12 +36,16 @@ model Customer {
   currency     String   @default("INR") // this party's ledger currency
   balanceMinor BigInt   @default(0) // cached running balance, signed minor units (+ = you'll get)
   note         String?  @db.Text
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  // Provenance: set when this customer was seeded from an admin-assigned
+  // predefined party (null = user-created custom party).
+  sourcePredefinedId String?
+  createdAt    DateTime @default(now()) @db.Timestamp(3)
+  updatedAt    DateTime @updatedAt @db.Timestamp(3)
   entries      Entry[]
 
   @@index([userId])
   @@index([userId, name])
+  @@index([userId, sourcePredefinedId])
   @@map("lb_customers")
 }
 
@@ -52,15 +59,109 @@ model Entry {
   amountMinor BigInt // positive, minor units
   currency    String // = customer.currency at time of entry
   note        String?   @db.Text
-  occurredAt  DateTime  @default(now())
-  createdAt   DateTime  @default(now())
+  // Workflow label. Balances/reads exclude ARCHIVED only; PENDING/APPROVED/
+  // REJECTED all count toward balances.
+  status      EntryStatus @default(PENDING)
+  // Current/live version number; bumps on every edit/status change. The full
+  // history lives in EntryVersion (the row with validTo = null mirrors these
+  // current field values).
+  version     Int       @default(1)
+  occurredAt  DateTime  @default(now()) @db.Timestamp(3)
+  createdAt   DateTime  @default(now()) @db.Timestamp(3)
+  updatedAt   DateTime  @updatedAt @default(now()) @db.Timestamp(3)
+  versions    EntryVersion[]
 
   @@index([customerId, occurredAt])
   @@index([userId, occurredAt])
+  @@index([userId, status])
+  @@index([customerId, status])
+  @@index([status])
   @@map("lb_entries")
+}
+
+// Append-only audit timeline for entries. Every create/edit/status change
+// inserts a new row; the prior live row is "expired" by stamping validTo.
+model EntryVersion {
+  id          String      @id @default(cuid())
+  entryId     String
+  entry       Entry       @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  version     Int
+  // Snapshot of the entry's fields at this version:
+  direction   Direction
+  amountMinor BigInt
+  currency    String
+  note        String?     @db.Text
+  occurredAt  DateTime    @db.Timestamp(3)
+  status      EntryStatus
+  // Audit metadata:
+  changeType  String // CREATE | EDIT | STATUS_CHANGE | ARCHIVE | UNARCHIVE
+  changedById String // actor (clerk user id)
+  isAdmin     Boolean     @default(false)
+  validFrom   DateTime    @default(now()) @db.Timestamp(3)
+  validTo     DateTime?   @db.Timestamp(3) // null = current/live version
+  createdAt   DateTime    @default(now()) @db.Timestamp(3)
+
+  @@unique([entryId, version])
+  @@index([entryId, validTo])
+  @@map("lb_entry_versions")
+}
+
+// Admin-managed currency catalog. Replaces the formerly hardcoded map.
+// `code` is the natural PK and matches the string stored in User.baseCurrency,
+// Customer.currency, Entry.currency (no relation FKs — validity is enforced in
+// the app layer).
+model Currency {
+  code      String   @id
+  symbol    String
+  decimals  Int      @default(2)
+  label     String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamp(3)
+  updatedAt DateTime @updatedAt @db.Timestamp(3)
+
+  @@map("lb_currencies")
+}
+
+// Admin-managed catalog of party templates. Assigning one to a user copies its
+// fields into a new per-user Customer (Customer.sourcePredefinedId = this id).
+model PredefinedParty {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  currency  String   @default("INR")
+  note      String?  @db.Text
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now()) @db.Timestamp(3)
+  updatedAt DateTime @updatedAt @db.Timestamp(3)
+
+  @@map("lb_predefined_parties")
+}
+
+// General audit feed for admin actions that have no entry of their own
+// (currency CRUD, permission toggles, party assignment). Entry status
+// transitions also write here so the admin audit view is a single query.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String // clerk id of the admin
+  action     String // e.g. CURRENCY_CREATE, USER_PERM_TOGGLE, ENTRY_APPROVE
+  targetType String // Currency | User | Customer | Entry | PredefinedParty
+  targetId   String
+  metadata   Json?
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+
+  @@index([targetType, targetId])
+  @@index([actorId, createdAt])
+  @@map("lb_audit_logs")
 }
 
 enum Direction {
   CREDIT
   DEBIT
+}
+
+enum EntryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
 }

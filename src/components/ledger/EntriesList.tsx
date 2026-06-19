@@ -11,6 +11,7 @@ type Entry = {
   currency: string;
   note: string | null;
   occurredAt: Date;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED";
 };
 
 /**

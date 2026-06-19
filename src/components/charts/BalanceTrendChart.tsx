@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { formatMoney, fromMinor } from "@/lib/money";
-import { CURRENCIES } from "@/lib/currency";
+import { getCurrencyMeta } from "@/lib/currency";
 
 type Point = { label: string; value: number };
 
@@ -21,7 +21,7 @@ export function BalanceTrendChart({
   currency: string;
 }) {
   const data = points.map((p) => ({ ...p, major: fromMinor(p.value, currency) }));
-  const symbol = CURRENCIES[currency]?.symbol ?? "";
+  const symbol = getCurrencyMeta(currency)?.symbol ?? "";
 
   return (
     <ResponsiveContainer width="100%" height={150}>

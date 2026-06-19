@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { updateProfile } from "@/server/actions/profile";
-import { CURRENCY_LIST } from "@/lib/currency";
+import { useActiveCurrencies } from "@/components/providers/CurrencyProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +24,7 @@ export function ProfileForm({
   baseCurrency: string;
 }) {
   const router = useRouter();
+  const currencies = useActiveCurrencies();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState(businessName);
   const [currency, setCurrency] = useState(baseCurrency);
@@ -62,7 +63,7 @@ export function ProfileForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CURRENCY_LIST.map((c) => (
+            {currencies.map((c) => (
               <SelectItem key={c.code} value={c.code}>
                 {c.symbol} {c.code} — {c.label}
               </SelectItem>

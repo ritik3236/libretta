@@ -1,3 +1,4 @@
+import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
 
 export type TrendPoint = { label: string; value: number }; // value in minor units (cumulative net)
@@ -20,7 +21,7 @@ export async function getBalanceTrend(userId: string): Promise<Trend> {
   const currency = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0];
 
   const entries = await prisma.entry.findMany({
-    where: { userId, currency },
+    where: { userId, currency, status: { not: EntryStatus.ARCHIVED } },
     orderBy: { occurredAt: "asc" },
     select: { direction: true, amountMinor: true, occurredAt: true },
   });

@@ -13,14 +13,14 @@ import {
   YAxis,
 } from "recharts";
 import { formatMoney, fromMinor } from "@/lib/money";
-import { CURRENCIES } from "@/lib/currency";
+import { getCurrencyMeta } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 type Point = { label: string; gave: number; got: number; net: number };
 
 export function ReportChart({ monthly, currency }: { monthly: Point[]; currency: string }) {
   const [view, setView] = useState<"bars" | "line">("bars");
-  const symbol = CURRENCIES[currency]?.symbol ?? "";
+  const symbol = getCurrencyMeta(currency)?.symbol ?? "";
 
   const data = monthly.map((m) => ({
     label: m.label,

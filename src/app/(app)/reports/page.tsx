@@ -6,12 +6,12 @@ import {
   startOfDay,
   endOfDay,
   subDays,
-  format,
   formatDistanceToNow,
 } from "date-fns";
 import { requireUser } from "@/server/auth";
 import { prisma } from "@/server/db";
 import { getReports, getReportCurrencies, type ReportParty } from "@/server/queries/reports";
+import { istDayStartUTC, istDayEndUTC, formatISODateIST } from "@/lib/datetime";
 import { AppHeader } from "@/components/nav/AppHeader";
 import { ReportsControls } from "@/components/ledger/ReportsControls";
 import { ReportChart } from "@/components/charts/ReportChart";
@@ -30,8 +30,8 @@ function resolveRange(period: Period, from: string | null, to: string | null) {
       return { from: new Date(0), to: endOfDay(now) };
     case "custom":
       return {
-        from: from ? startOfDay(new Date(from)) : new Date(0),
-        to: to ? endOfDay(new Date(to)) : endOfDay(now),
+        from: from ? istDayStartUTC(from) : new Date(0),
+        to: to ? istDayEndUTC(to) : endOfDay(now),
       };
     case "year":
     default:
@@ -69,8 +69,8 @@ export default async function ReportsPage({
   // export hrefs carry the active scope
   const exportParams = new URLSearchParams({ currency });
   if (period !== "all") {
-    exportParams.set("from", format(from, "yyyy-MM-dd"));
-    exportParams.set("to", format(to, "yyyy-MM-dd"));
+    exportParams.set("from", formatISODateIST(from));
+    exportParams.set("to", formatISODateIST(to));
   }
   const csvHref = `/api/export/csv?${exportParams.toString()}`;
   const pdfHref = `/report-summary?${exportParams.toString()}`;

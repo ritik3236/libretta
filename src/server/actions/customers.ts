@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
+import { isActiveCurrencyDB } from "@/server/queries/currencies";
 import { customerSchema } from "@/lib/validators";
 
 export type ActionResult =
@@ -16,6 +17,18 @@ export async function createCustomer(input: unknown): Promise<ActionResult> {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
   const { name, phone, currency, note } = parsed.data;
+
+  // Permission gate: an admin may have disabled self-creation for this user.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { canCreateParties: true },
+  });
+  if (!user?.canCreateParties) {
+    return { ok: false, error: "You don't have permission to create parties." };
+  }
+  if (!(await isActiveCurrencyDB(currency))) {
+    return { ok: false, error: "Unsupported currency" };
+  }
 
   const customer = await prisma.customer.create({
     data: {

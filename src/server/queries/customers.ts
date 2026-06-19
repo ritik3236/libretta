@@ -1,4 +1,9 @@
+import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
+
+// Archived entries are hidden everywhere in the user app (and excluded from
+// totals). All other statuses count.
+const NOT_ARCHIVED = { status: { not: EntryStatus.ARCHIVED } } as const;
 
 export type CustomerView = {
   id: string;
@@ -53,6 +58,7 @@ export type EntryView = {
   currency: string;
   note: string | null;
   occurredAt: Date;
+  status: EntryStatus;
 };
 
 export async function getCustomer(userId: string, id: string) {
@@ -63,13 +69,13 @@ export async function getCustomer(userId: string, id: string) {
 
   const [entries, grouped] = await Promise.all([
     prisma.entry.findMany({
-      where: { customerId: id, userId },
+      where: { customerId: id, userId, ...NOT_ARCHIVED },
       orderBy: { occurredAt: "desc" },
     }),
-    // Server-side aggregate so totals reflect ALL entries, not just rendered rows.
+    // Server-side aggregate so totals reflect ALL non-archived entries, not just rendered rows.
     prisma.entry.groupBy({
       by: ["direction"],
-      where: { customerId: id, userId },
+      where: { customerId: id, userId, ...NOT_ARCHIVED },
       _sum: { amountMinor: true },
     }),
   ]);
@@ -93,6 +99,7 @@ export async function getCustomer(userId: string, id: string) {
       currency: e.currency,
       note: e.note,
       occurredAt: e.occurredAt,
+      status: e.status,
     })),
   };
 }

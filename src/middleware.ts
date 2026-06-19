@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { DEV_AUTH_BYPASS } from "@/lib/dev-auth";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -7,11 +8,16 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
-});
+// With the dev bypass on, skip Clerk middleware entirely so the dev-browser
+// handshake never redirects to *.accounts.dev. A no-op middleware just passes
+// the request through (equivalent to NextResponse.next()).
+export default DEV_AUTH_BYPASS
+  ? function middleware() {}
+  : clerkMiddleware(async (auth, req) => {
+      if (!isPublicRoute(req)) {
+        await auth.protect();
+      }
+    });
 
 export const config = {
   matcher: [

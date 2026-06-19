@@ -1,7 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
-import { Prisma, Direction } from "@prisma/client";
+import { Prisma, Direction, EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
+import { getOptionalUserId } from "@/server/auth";
+import { getCurrencies } from "@/server/queries/currencies";
 import { fromMinor } from "@/lib/money";
+import { istDayStartUTC, istDayEndUTC, formatISODateIST } from "@/lib/datetime";
 import { appConfig } from "@/lib/app-config";
 
 export const runtime = "nodejs";
@@ -11,8 +13,9 @@ function field(s: string) {
 }
 
 export async function GET(req: Request) {
-  const { userId } = await auth();
+  const userId = await getOptionalUserId();
   if (!userId) return new Response("Unauthorized", { status: 401 });
+  await getCurrencies(); // hydrate currency registry for fromMinor
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type"); // CREDIT | DEBIT
@@ -21,7 +24,8 @@ export async function GET(req: Request) {
   const from = searchParams.get("from"); // yyyy-MM-dd
   const to = searchParams.get("to"); // yyyy-MM-dd
 
-  const where: Prisma.EntryWhereInput = { userId };
+  // Archived entries are excluded from exports (hidden, like in the app).
+  const where: Prisma.EntryWhereInput = { userId, status: { not: EntryStatus.ARCHIVED } };
   if (type === "CREDIT") where.direction = Direction.CREDIT;
   else if (type === "DEBIT") where.direction = Direction.DEBIT;
   if (currency) where.currency = currency;
@@ -29,8 +33,8 @@ export async function GET(req: Request) {
   else if (customerIds.length > 1) where.customerId = { in: customerIds };
   if (from || to) {
     where.occurredAt = {};
-    if (from) where.occurredAt.gte = new Date(`${from}T00:00:00.000`);
-    if (to) where.occurredAt.lte = new Date(`${to}T23:59:59.999`);
+    if (from) where.occurredAt.gte = istDayStartUTC(from);
+    if (to) where.occurredAt.lte = istDayEndUTC(to);
   }
 
   const entries = await prisma.entry.findMany({
@@ -42,7 +46,7 @@ export async function GET(req: Request) {
   const header = ["Date", "Customer", "Type", "Amount", "Currency", "Note"];
   const lines = entries.map((e) =>
     [
-      e.occurredAt.toISOString().slice(0, 10),
+      formatISODateIST(e.occurredAt),
       field(e.customer.name),
       e.direction === "CREDIT" ? "You gave" : "You got",
       fromMinor(Number(e.amountMinor), e.currency).toString(),

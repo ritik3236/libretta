@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { isSupportedCurrency } from "@/lib/currency";
 
 export const customerSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
@@ -9,7 +8,9 @@ export const customerSchema = z.object({
     .max(20)
     .optional()
     .or(z.literal("")),
-  currency: z.string().refine(isSupportedCurrency, "Unsupported currency"),
+  // Currency validity is checked against the DB catalog in the action
+  // (isActiveCurrencyDB) since the supported set is now dynamic.
+  currency: z.string().min(1, "Currency is required"),
   note: z.string().trim().max(500).optional().or(z.literal("")),
 });
 export type CustomerInput = z.infer<typeof customerSchema>;

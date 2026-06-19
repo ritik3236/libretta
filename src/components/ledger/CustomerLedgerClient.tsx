@@ -4,6 +4,7 @@ import { useOptimistic, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ArrowUpRight, ArrowDownLeft, Trash2 } from "lucide-react";
 import { createEntry, updateEntry, deleteEntry } from "@/server/actions/entries";
+import { istInputToUTC } from "@/lib/datetime";
 import { CountUp } from "./CountUp";
 import { EntriesList } from "./EntriesList";
 import { DatePicker } from "./DatePicker";
@@ -12,10 +13,11 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CURRENCIES } from "@/lib/currency";
+import { getCurrencyMeta } from "@/lib/currency";
 import { toMinor, fromMinor, formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 
+type EntryStatus = "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED";
 type Entry = {
   id: string;
   direction: "CREDIT" | "DEBIT";
@@ -23,6 +25,7 @@ type Entry = {
   currency: string;
   note: string | null;
   occurredAt: Date;
+  status: EntryStatus;
 };
 type Customer = { id: string; name: string; currency: string; balance: number };
 type State = { balance: number; totalGave: number; totalGot: number; entries: Entry[] };
@@ -98,7 +101,7 @@ export function CustomerLedgerClient({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const cur = customer.currency;
-  const symbol = CURRENCIES[cur]?.symbol ?? "";
+  const symbol = getCurrencyMeta(cur)?.symbol ?? "";
   const gave = direction === "CREDIT";
   const positive = optimistic.balance >= 0;
   const settled = optimistic.balance === 0;
@@ -115,6 +118,11 @@ export function CustomerLedgerClient({
   }
 
   function openEdit(e: Entry) {
+    // Locked after review: only PENDING entries are editable by the user.
+    if (e.status !== "PENDING") {
+      toast.info("This entry was reviewed and can no longer be edited.");
+      return;
+    }
     setMode("edit");
     setEditingId(e.id);
     setDirection(e.direction);
@@ -139,21 +147,22 @@ export function CustomerLedgerClient({
         amount: amountMinor,
         currency: cur,
         note: note || null,
-        occurredAt: date,
+        occurredAt: istInputToUTC(date),
+        status: "PENDING",
       };
       startTransition(async () => {
         applyOptimistic({ kind: "add", entry: tmp });
-        const res = await createEntry({ customerId: customer.id, direction, amount: amt, note, occurredAt: date });
+        const res = await createEntry({ customerId: customer.id, direction, amount: amt, note, occurredAt: istInputToUTC(date) });
         if (res.ok) toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
         else toast.error(res.error);
       });
     } else if (editingId) {
       const prev = optimistic.entries.find((x) => x.id === editingId);
       if (!prev) return;
-      const next: Entry = { ...prev, direction, amount: amountMinor, note: note || null, occurredAt: date };
+      const next: Entry = { ...prev, direction, amount: amountMinor, note: note || null, occurredAt: istInputToUTC(date) };
       startTransition(async () => {
         applyOptimistic({ kind: "edit", prev, next });
-        const res = await updateEntry({ id: editingId, direction, amount: amt, note, occurredAt: date });
+        const res = await updateEntry({ id: editingId, direction, amount: amt, note, occurredAt: istInputToUTC(date) });
         if (res.ok) toast.success("Entry updated");
         else toast.error(res.error);
       });

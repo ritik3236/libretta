@@ -1,3 +1,4 @@
+import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { listCustomers } from "./customers";
 
@@ -36,7 +37,7 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
       select: { baseCurrency: true, businessName: true },
     }),
     prisma.entry.findMany({
-      where: { userId },
+      where: { userId, status: { not: EntryStatus.ARCHIVED } },
       orderBy: { occurredAt: "desc" },
       take: 30,
       include: { customer: { select: { name: true } } },

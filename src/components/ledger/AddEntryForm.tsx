@@ -6,7 +6,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { createEntry } from "@/server/actions/entries";
-import { CURRENCIES } from "@/lib/currency";
+import { istInputToUTC } from "@/lib/datetime";
+import { getCurrencyMeta } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,10 +28,14 @@ export function AddEntryForm({
   customers,
   defaultCustomerId,
   defaultDirection = "CREDIT",
+  onDone,
 }: {
   customers: CustomerOpt[];
   defaultCustomerId?: string;
   defaultDirection?: "CREDIT" | "DEBIT";
+  /** When provided (e.g. inside a sheet), called after a successful save
+   *  instead of navigating to the party page. */
+  onDone?: () => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -47,7 +52,7 @@ export function AddEntryForm({
     () => customers.find((c) => c.id === customerId),
     [customers, customerId],
   );
-  const symbol = selected ? CURRENCIES[selected.currency]?.symbol ?? "" : "";
+  const symbol = selected ? getCurrencyMeta(selected.currency)?.symbol ?? "" : "";
   const gave = direction === "CREDIT";
 
   if (customers.length === 0) {
@@ -69,11 +74,16 @@ export function AddEntryForm({
         direction,
         amount: Number(amount),
         note,
-        occurredAt: date,
+        occurredAt: istInputToUTC(date),
       });
       if (res.ok) {
         toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
-        router.push(`/parties/${customerId}`);
+        if (onDone) {
+          onDone();
+          router.refresh();
+        } else {
+          router.push(`/parties/${customerId}`);
+        }
       } else {
         toast.error(res.error);
       }
@@ -134,7 +144,7 @@ export function AddEntryForm({
           <SelectContent>
             {customers.map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {c.name} ({CURRENCIES[c.currency]?.code ?? c.currency})
+                {c.name} ({getCurrencyMeta(c.currency)?.code ?? c.currency})
               </SelectItem>
             ))}
           </SelectContent>

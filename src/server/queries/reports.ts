@@ -1,3 +1,4 @@
+import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
 
 export type ReportParty = {
@@ -53,7 +54,12 @@ export async function getReports(
       select: { id: true, name: true, balanceMinor: true, updatedAt: true },
     }),
     prisma.entry.findMany({
-      where: { userId, currency, occurredAt: { gte: from, lte: to } },
+      where: {
+        userId,
+        currency,
+        occurredAt: { gte: from, lte: to },
+        status: { not: EntryStatus.ARCHIVED },
+      },
       select: { direction: true, amountMinor: true, occurredAt: true },
       orderBy: { occurredAt: "asc" },
     }),

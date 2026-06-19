@@ -3,6 +3,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Tailwind v4 no longer sets cursor:pointer on buttons by default — restore it
+   app-wide so every button/clickable shows a pointer (and disabled shows not-allowed). */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  label[for],
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
 :root {
   --radius: 0.75rem;
 
@@ -114,6 +130,29 @@
   margin: 0 auto;
   min-height: 100dvh;
   position: relative;
+}
+
+/* Admin is desktop-first: full width, sidebar + content, compact density. */
+.admin-shell {
+  width: 100%;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+
+  /* Theme tokens — restyle the admin (incl. the filter panel) by overriding these. */
+  --sb-bg: #ffffff;
+  --sb-border: #e2e8f0; /* slate-200 */
+  --sb-fg: #0f172a; /* slate-900 */
+  --sb-muted: #64748b; /* slate-500 */
+  --sb-hover-bg: #f1f5f9; /* slate-100 */
+  --sb-active-bg: #0f172a; /* slate-900 */
+  --sb-active-fg: #ffffff;
+  --sb-accent: #15803d; /* emerald-700 */
+}
+@media (max-width: 640px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,5 @@
 import { PrismaClient, Direction } from "@prisma/client";
+import { SEED_CURRENCIES } from "./currencies";
 
 const prisma = new PrismaClient();
 
@@ -9,6 +10,15 @@ const prisma = new PrismaClient();
  */
 async function main() {
   const userId = process.env.SEED_USER_ID ?? "user_demo_seed";
+
+  // Seed the currency catalog (idempotent).
+  for (const c of SEED_CURRENCIES) {
+    await prisma.currency.upsert({
+      where: { code: c.code },
+      create: { ...c },
+      update: { symbol: c.symbol, decimals: c.decimals, label: c.label },
+    });
+  }
 
   await prisma.user.upsert({
     where: { id: userId },
@@ -75,7 +85,7 @@ async function main() {
       balance += e.direction === "CREDIT" ? amountMinor : -amountMinor;
       const occurredAt = new Date();
       occurredAt.setDate(occurredAt.getDate() - e.daysAgo);
-      await prisma.entry.create({
+      const created = await prisma.entry.create({
         data: {
           userId,
           customerId: customer.id,
@@ -84,6 +94,22 @@ async function main() {
           currency: c.currency,
           note: e.note ?? null,
           occurredAt,
+        },
+      });
+      // v1 audit version mirroring the created entry (validTo null = live).
+      await prisma.entryVersion.create({
+        data: {
+          entryId: created.id,
+          version: 1,
+          direction: created.direction,
+          amountMinor: created.amountMinor,
+          currency: created.currency,
+          note: created.note,
+          occurredAt: created.occurredAt,
+          status: created.status,
+          changeType: "CREATE",
+          changedById: userId,
+          isAdmin: false,
         },
       });
     }

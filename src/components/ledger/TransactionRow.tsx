@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { formatMoney } from "@/lib/money";
-import { format } from "date-fns";
+import { formatDateShortIST } from "@/lib/datetime";
 
 export function TransactionRow({
   tx,
@@ -32,7 +32,7 @@ export function TransactionRow({
       <div className="min-w-0">
         <div className="truncate text-sm font-bold">{tx.customerName}</div>
         <div className="truncate text-[11px] text-muted-foreground">
-          {tx.note || (gave ? "You gave" : "You got")} · {format(tx.occurredAt, "d MMM")}
+          {tx.note || (gave ? "You gave" : "You got")} · {formatDateShortIST(tx.occurredAt)}
         </div>
       </div>
       <div

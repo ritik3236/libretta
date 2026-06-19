@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev", "-p", "4000"],
+      "port": 4000
+    },
+    {
+      "name": "next-start",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["start", "-p", "3000"],
+      "port": 3000
+    },
+    {
+      "name": "prisma-studio",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["db:studio"],
+      "port": 5555
+    }
+  ]
+}

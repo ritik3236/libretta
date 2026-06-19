@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/money";
-import { format } from "date-fns";
+import { formatDateIST } from "@/lib/datetime";
 
 type Entry = {
   id: string;
@@ -24,6 +24,7 @@ type Entry = {
   currency: string;
   note: string | null;
   occurredAt: Date;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED";
 };
 
 export function EntryItem({ entry }: { entry: Entry }) {
@@ -45,7 +46,7 @@ export function EntryItem({ entry }: { entry: Entry }) {
           </DialogTitle>
           <DialogDescription>
             {entry.note ? `"${entry.note}" · ` : ""}
-            {format(entry.occurredAt, "d MMM yyyy")}
+            {formatDateIST(entry.occurredAt)}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
