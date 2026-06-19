@@ -25,8 +25,8 @@ function revalidateEntryPaths(customerId: string) {
  * CREDIT (you gave) increases balance (you'll get more). DEBIT (you got) decreases it.
  */
 export async function createEntry(input: unknown): Promise<ActionResult> {
-  const userId = await requireUser();
-  await getCurrencies(); // hydrate registry for toMinor
+  // Independent — run in parallel (getCurrencies hydrates the registry for toMinor).
+  const [userId] = await Promise.all([requireUser(), getCurrencies()]);
   const parsed = entrySchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
@@ -84,8 +84,7 @@ export async function createEntry(input: unknown): Promise<ActionResult> {
  * appends a new version, and adjusts the cached balance by old→new delta.
  */
 export async function updateEntry(input: unknown): Promise<ActionResult> {
-  const userId = await requireUser();
-  await getCurrencies();
+  const [userId] = await Promise.all([requireUser(), getCurrencies()]);
   const parsed = entryUpdateSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };

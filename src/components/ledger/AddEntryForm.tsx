@@ -68,22 +68,37 @@ export function AddEntryForm({
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    const payload = {
+      customerId,
+      direction,
+      amount: Number(amount),
+      note,
+      occurredAt: istInputToUTC(date),
+    };
+
+    // Inside a sheet (FAB): close instantly and save in the background so the
+    // user never waits on the round-trip. Toast + refresh once it resolves.
+    if (onDone) {
+      onDone();
+      createEntry(payload)
+        .then((res) => {
+          if (res.ok) {
+            toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
+            router.refresh();
+          } else {
+            toast.error(res.error);
+          }
+        })
+        .catch(() => toast.error("Couldn't save entry — please retry."));
+      return;
+    }
+
+    // Full-page route: await the save, then navigate to the party ledger.
     startTransition(async () => {
-      const res = await createEntry({
-        customerId,
-        direction,
-        amount: Number(amount),
-        note,
-        occurredAt: istInputToUTC(date),
-      });
+      const res = await createEntry(payload);
       if (res.ok) {
         toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
-        if (onDone) {
-          onDone();
-          router.refresh();
-        } else {
-          router.push(`/parties/${customerId}`);
-        }
+        router.push(`/parties/${customerId}`);
       } else {
         toast.error(res.error);
       }

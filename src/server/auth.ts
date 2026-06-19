@@ -5,18 +5,38 @@ import { DEV_AUTH_BYPASS, DEV_USER, DEV_ROLES } from "@/lib/dev-auth";
 /** Roles that may access the admin area. v1: any of these gets full access. */
 export const PRIVILEGED_ROLES = ["admin", "ops"] as const;
 
-/** Upserts the seeded dev user (used only when DEV_AUTH_BYPASS is on). */
-async function ensureDevUser(): Promise<string> {
-  await prisma.user.upsert({
-    where: { id: DEV_USER.id },
-    create: {
-      id: DEV_USER.id,
-      email: DEV_USER.email,
-      name: `${DEV_USER.firstName} ${DEV_USER.lastName}`,
-    },
-    update: {},
-  });
-  return DEV_USER.id;
+/**
+ * User ids we've already guaranteed a row for in this server process, so
+ * `requireUser` can skip the existence round-trip on every subsequent call.
+ * (A deleted user mid-process is an admin edge case; the FK guard still holds
+ * because the row was ensured at least once.)
+ */
+const ensuredUsers = new Set<string>();
+
+/**
+ * Upserts the seeded dev user (used only when DEV_AUTH_BYPASS is on).
+ * Memoized per process — the upsert runs once, not on every save.
+ */
+let devUserReady: Promise<string> | null = null;
+function ensureDevUser(): Promise<string> {
+  if (!devUserReady) {
+    devUserReady = prisma.user
+      .upsert({
+        where: { id: DEV_USER.id },
+        create: {
+          id: DEV_USER.id,
+          email: DEV_USER.email,
+          name: `${DEV_USER.firstName} ${DEV_USER.lastName}`,
+        },
+        update: {},
+      })
+      .then(() => DEV_USER.id)
+      .catch((e) => {
+        devUserReady = null; // let the next call retry on failure
+        throw e;
+      });
+  }
+  return devUserReady;
 }
 
 /**
@@ -30,6 +50,7 @@ export async function requireUser(): Promise<string> {
 
   const { userId } = await auth();
   if (!userId) throw new Error("UNAUTHENTICATED");
+  if (ensuredUsers.has(userId)) return userId;
 
   const existing = await prisma.user.findUnique({ where: { id: userId } });
   if (!existing) {
@@ -45,6 +66,7 @@ export async function requireUser(): Promise<string> {
       update: {},
     });
   }
+  ensuredUsers.add(userId);
   return userId;
 }
 

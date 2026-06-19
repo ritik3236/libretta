@@ -24,10 +24,13 @@ export type EntryVersionInput = {
  * updateMany simply matches nothing.
  */
 export async function writeEntryVersion(tx: Tx, v: EntryVersionInput): Promise<void> {
-  await tx.entryVersion.updateMany({
-    where: { entryId: v.entryId, validTo: null },
-    data: { validTo: new Date() },
-  });
+  // On CREATE there is no prior live version to expire — skip the no-op round-trip.
+  if (v.changeType !== "CREATE") {
+    await tx.entryVersion.updateMany({
+      where: { entryId: v.entryId, validTo: null },
+      data: { validTo: new Date() },
+    });
+  }
   await tx.entryVersion.create({
     data: {
       entryId: v.entryId,
