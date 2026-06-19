@@ -75,6 +75,12 @@ model Entry {
   @@index([userId, occurredAt])
   @@index([userId, status])
   @@index([customerId, status])
+  // Reports + trend filter userId+currency (equality) then range/sort on
+  // occurredAt — equality cols first, range/sort col last, so no filesort.
+  // (Dashboard recent + party-ledger occurredAt sorts are already served by the
+  // [userId, occurredAt] / [customerId, occurredAt] indexes above, with
+  // status != ARCHIVED applied as a residual filter.)
+  @@index([userId, currency, occurredAt])
   @@index([status])
   @@map("lb_entries")
 }
