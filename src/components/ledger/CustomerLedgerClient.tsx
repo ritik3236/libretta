@@ -90,7 +90,10 @@ export function CustomerLedgerClient({
     reducer,
   );
 
-  const [pending, startTransition] = useTransition();
+  // No `pending` flag on the Save button: the sheet closes on submit and
+  // useOptimistic queues concurrent in-flight adds, so saves needn't be
+  // serialized — blocking the next one until the current finishes was the bug.
+  const [, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<"add" | "edit">("add");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -142,7 +145,9 @@ export function CustomerLedgerClient({
 
     if (mode === "add") {
       const tmp: Entry = {
-        id: `tmp-${Date.now()}`,
+        // Unique per add — Date.now() could collide on rapid concurrent saves,
+        // and the edit/delete reducers match optimistic rows by id.
+        id: `tmp-${crypto.randomUUID()}`,
         direction,
         amount: amountMinor,
         currency: cur,
@@ -304,7 +309,7 @@ export function CustomerLedgerClient({
               type="submit"
               size="lg"
               variant={gave ? "default" : "destructive"}
-              disabled={pending || !amount}
+              disabled={!amount}
               className="w-full"
             >
               {mode === "edit" ? "Save changes" : "Save entry"}
