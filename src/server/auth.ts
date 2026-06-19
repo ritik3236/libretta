@@ -1,4 +1,5 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { DEV_AUTH_BYPASS, DEV_USER, DEV_ROLES } from "@/lib/dev-auth";
 
@@ -60,11 +61,20 @@ export async function requireUser(): Promise<string> {
     const name = cu
       ? [cu.firstName, cu.lastName].filter(Boolean).join(" ") || null
       : null;
-    await prisma.user.upsert({
-      where: { id: userId },
-      create: { id: userId, email, name },
-      update: {},
-    });
+    try {
+      await prisma.user.create({ data: { id: userId, email, name } });
+    } catch (e) {
+      // First login renders the layout and the page concurrently — both miss
+      // the findUnique above and race to insert; the loser hits P2002. Only
+      // treat that as success if the row keyed by THIS id now exists (the PK
+      // race). A P2002 on the unique `email` index means another user owns that
+      // email — a real conflict — so re-check and rethrow if our row is absent.
+      if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002")) {
+        throw e;
+      }
+      const raced = await prisma.user.findUnique({ where: { id: userId } });
+      if (!raced) throw e;
+    }
   }
   ensuredUsers.add(userId);
   return userId;
