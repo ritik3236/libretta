@@ -9,21 +9,23 @@ import { AddEntryForm } from "@/components/ledger/AddEntryForm";
 type CustomerOpt = { id: string; name: string; currency: string };
 
 /**
- * Always-available, compact grouped control to record an entry from anywhere.
+ * Compact grouped control to record an entry from list/overview screens.
  * One joined pill with two icon-only segments mirroring the entry form's
  * direction toggle — ↗ green "you gave" (CREDIT) and ↘ red "you got" (DEBIT).
- * Tapping a segment opens the entry sheet IN PLACE (no navigation); on a
- * party's ledger it pre-selects that party. Hidden on the add-entry screen.
+ * Tapping a segment opens the entry sheet IN PLACE (no navigation). Hidden on
+ * the add-entry screen and on a party's ledger (both already have their own
+ * entry controls).
  */
 export function AddEntryFab({ customers }: { customers: CustomerOpt[] }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [direction, setDirection] = useState<"CREDIT" | "DEBIT">("CREDIT");
 
-  if (pathname === "/entries/new") return null;
-
-  const partyMatch = pathname.match(/^\/parties\/([^/]+)$/);
-  const partyId = partyMatch && partyMatch[1] !== "new" ? partyMatch[1] : null;
+  // A party's ledger has its own You gave / You got CTAs, and the add-entry
+  // screen is the form itself — hide the global FAB on both to avoid duplicate
+  // controls. It stays on the dashboard, parties list, reports, etc.
+  const onPartyLedger = /^\/parties\/[^/]+$/.test(pathname) && pathname !== "/parties/new";
+  if (pathname === "/entries/new" || onPartyLedger) return null;
 
   function openWith(d: "CREDIT" | "DEBIT") {
     setDirection(d);
@@ -64,7 +66,6 @@ export function AddEntryFab({ customers }: { customers: CustomerOpt[] }) {
               <AddEntryForm
                 customers={customers}
                 defaultDirection={direction}
-                defaultCustomerId={partyId ?? undefined}
                 onDone={() => setOpen(false)}
               />
             )}
