@@ -20,7 +20,7 @@ export default async function CustomerLedgerPage({
   return (
     <>
       <AppHeader
-        backHref="/parties"
+        backHref="/banks"
         left={
           <div className="flex min-w-0 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-bold text-muted-foreground">
@@ -51,9 +51,10 @@ export default async function CustomerLedgerPage({
             <DeleteCustomerButton id={customer.id} name={customer.name} />
           </>
         }
+        contained
       />
 
-      <div className="px-5 pt-4 pb-4">
+      <div className="mx-auto max-w-3xl px-5 pt-4 pb-4 md:px-8 md:pt-6">
         <CustomerLedgerClient
           customer={{
             id: customer.id,

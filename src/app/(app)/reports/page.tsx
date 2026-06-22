@@ -10,7 +10,7 @@ import {
 } from "date-fns";
 import { requireUser } from "@/server/auth";
 import { prisma } from "@/server/db";
-import { getReports, getReportCurrencies, type ReportParty } from "@/server/queries/reports";
+import { getReports, getReportCurrencies, type ReportBank } from "@/server/queries/reports";
 import { istDayStartUTC, istDayEndUTC, formatISODateIST } from "@/lib/datetime";
 import { AppHeader } from "@/components/nav/AppHeader";
 import { ReportsControls } from "@/components/ledger/ReportsControls";
@@ -98,9 +98,10 @@ export default async function ReportsPage({
             </a>
           </>
         }
+        contained
       />
 
-      <div className="space-y-5 px-5 pt-4">
+      <div className="mx-auto max-w-3xl space-y-5 px-5 pt-4 md:px-8 md:pt-6">
         <ReportsControls
           period={period}
           currency={currency}
@@ -146,19 +147,19 @@ export default async function ReportsPage({
         </section>
 
         {/* Top receivables */}
-        <PartyRanking
+        <BankRanking
           title="Top — you'll get"
           icon={<ArrowUpRight className="h-4 w-4 text-emerald-600" />}
-          parties={data.topReceivables}
+          banks={data.topReceivables}
           currency={currency}
           tone="emerald"
         />
 
         {/* Top payables */}
-        <PartyRanking
+        <BankRanking
           title="Top — you'll give"
           icon={<ArrowDownLeft className="h-4 w-4 text-red-600" />}
-          parties={data.topPayables}
+          banks={data.topPayables}
           currency={currency}
           tone="red"
         />
@@ -175,7 +176,7 @@ export default async function ReportsPage({
               {data.aging.map((p) => (
                 <Link
                   key={p.id}
-                  href={`/parties/${p.id}`}
+                  href={`/banks/${p.id}`}
                   className="flex items-center justify-between border-b border-border/50 py-3 active:bg-muted/40"
                 >
                   <div className="min-w-0">
@@ -234,30 +235,30 @@ function Exposure({
   );
 }
 
-function PartyRanking({
+function BankRanking({
   title,
   icon,
-  parties,
+  banks,
   currency,
   tone,
 }: {
   title: string;
   icon: React.ReactNode;
-  parties: ReportParty[];
+  banks: ReportBank[];
   currency: string;
   tone: "emerald" | "red";
 }) {
-  if (parties.length === 0) return null;
+  if (banks.length === 0) return null;
   return (
     <section>
       <h2 className="mb-1 flex items-center gap-1.5 text-sm font-bold">
         {icon} {title}
       </h2>
       <div>
-        {parties.map((p) => (
+        {banks.map((p) => (
           <Link
             key={p.id}
-            href={`/parties/${p.id}`}
+            href={`/banks/${p.id}`}
             className="flex items-center justify-between border-b border-border/50 py-2.5 active:bg-muted/40"
           >
             <span className="truncate text-sm font-semibold">{p.name}</span>

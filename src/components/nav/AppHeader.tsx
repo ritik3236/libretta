@@ -13,6 +13,7 @@ export function AppHeader({
   left,
   right,
   className,
+  contained,
 }: {
   title?: string;
   subtitle?: string;
@@ -20,6 +21,9 @@ export function AppHeader({
   left?: React.ReactNode;
   right?: React.ReactNode;
   className?: string;
+  /** On desktop, cap the header row to the page's reading width so it lines up
+   *  with `contained` content below (used on single-column pages). */
+  contained?: boolean;
 }) {
   return (
     <header
@@ -29,7 +33,12 @@ export function AppHeader({
       )}
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
-      <div className="flex h-14 items-center gap-2.5 px-5">
+      <div
+        className={cn(
+          "flex h-14 items-center gap-2.5 px-5 md:px-8",
+          contained && "mx-auto w-full max-w-3xl",
+        )}
+      >
         {backHref && (
           <Link
             href={backHref}

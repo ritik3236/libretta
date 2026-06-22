@@ -7,17 +7,17 @@ import { writeAudit } from "@/server/audit";
 
 export type AdminResult = { ok: true } | { ok: false; error: string };
 
-/** Toggle whether a user may create their own parties. */
-export async function setCanCreateParties(
+/** Toggle whether a user may create their own banks. */
+export async function setCanCreateBanks(
   userId: string,
-  canCreateParties: boolean,
+  canCreateBanks: boolean,
 ): Promise<AdminResult> {
   const actorId = await requireRole();
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { ok: false, error: "User not found" };
 
-  await prisma.user.update({ where: { id: userId }, data: { canCreateParties } });
-  await writeAudit(actorId, "USER_PERM_TOGGLE", "User", userId, { canCreateParties });
+  await prisma.user.update({ where: { id: userId }, data: { canCreateBanks } });
+  await writeAudit(actorId, "USER_PERM_TOGGLE", "User", userId, { canCreateBanks });
   revalidatePath(`/admin/users/${userId}`);
   revalidatePath("/admin/users");
   return { ok: true };

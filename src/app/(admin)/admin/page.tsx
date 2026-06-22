@@ -20,8 +20,8 @@ export default async function AdminDashboardPage() {
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Users" value={o.userCount} href="/admin/users" />
-        <Stat label="Parties" value={o.customerCount} />
-        <Stat label="Predefined" value={o.predefinedCount} href="/admin/parties" />
+        <Stat label="Banks" value={o.customerCount} />
+        <Stat label="Predefined" value={o.predefinedCount} href="/admin/banks" />
         <Stat label="Currencies" value={o.currencyCount} href="/admin/currencies" />
       </section>
 

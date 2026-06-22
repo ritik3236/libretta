@@ -15,8 +15,8 @@ export default async function NewEntryPage({
 
   return (
     <>
-      <AppHeader title="Add entry" backHref={customerId ? `/parties/${customerId}` : "/dashboard"} />
-      <div className="px-5 pt-4">
+      <AppHeader title="Add entry" backHref={customerId ? `/banks/${customerId}` : "/dashboard"} />
+      <div className="mx-auto max-w-lg px-5 pt-4 md:pt-6">
         <AddEntryForm
           customers={customers.map((c) => ({ id: c.id, name: c.name, currency: c.currency }))}
           defaultCustomerId={customerId}

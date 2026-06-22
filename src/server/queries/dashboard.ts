@@ -18,6 +18,7 @@ export type RecentEntry = {
   currency: string;
   note: string | null;
   occurredAt: Date;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED";
 };
 
 export type DashboardData = {
@@ -67,6 +68,7 @@ export async function getDashboard(userId: string): Promise<DashboardData> {
     currency: e.currency,
     note: e.note,
     occurredAt: e.occurredAt,
+    status: e.status,
   }));
 
   return {

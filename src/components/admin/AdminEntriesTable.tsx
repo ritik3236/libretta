@@ -160,7 +160,7 @@ export function AdminEntriesTable({ rows }: { rows: AdminEntryRow[] }) {
             </th>
             <th className="font-semibold">Date</th>
             <th className="font-semibold">User</th>
-            <th className="font-semibold">Party</th>
+            <th className="font-semibold">Bank</th>
             <th className="font-semibold">Type</th>
             <th className="font-semibold text-right pr-6">Amount</th>
             <th className="font-semibold">Status</th>

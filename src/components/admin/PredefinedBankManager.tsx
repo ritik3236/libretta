@@ -3,12 +3,12 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
-  createPredefinedParty,
-  togglePredefinedPartyActive,
-} from "@/server/actions/admin/parties";
+  createPredefinedBank,
+  togglePredefinedBankActive,
+} from "@/server/actions/admin/banks";
 import { useActiveCurrencies } from "@/components/providers/CurrencyProvider";
 
-type Party = {
+type Bank = {
   id: string;
   name: string;
   phone: string | null;
@@ -16,14 +16,14 @@ type Party = {
   isActive: boolean;
 };
 
-export function PredefinedPartyManager({ parties }: { parties: Party[] }) {
+export function PredefinedBankManager({ banks }: { banks: Bank[] }) {
   const currencies = useActiveCurrencies();
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState({ name: "", phone: "", currency: currencies[0]?.code ?? "INR", note: "" });
 
   function toggle(id: string, isActive: boolean) {
     startTransition(async () => {
-      const res = await togglePredefinedPartyActive(id, isActive);
+      const res = await togglePredefinedBankActive(id, isActive);
       if (!res.ok) toast.error(res.error);
     });
   }
@@ -31,7 +31,7 @@ export function PredefinedPartyManager({ parties }: { parties: Party[] }) {
   function create(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const res = await createPredefinedParty(form);
+      const res = await createPredefinedBank(form);
       if (res.ok) {
         toast.success(`Added ${form.name}`);
         setForm({ name: "", phone: "", currency: form.currency, note: "" });
@@ -44,8 +44,8 @@ export function PredefinedPartyManager({ parties }: { parties: Party[] }) {
   return (
     <div className="space-y-4">
       <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-        {parties.length === 0 && <li className="p-3 text-[13px] text-slate-500">No predefined parties.</li>}
-        {parties.map((p) => (
+        {banks.length === 0 && <li className="p-3 text-[13px] text-slate-500">No predefined banks.</li>}
+        {banks.map((p) => (
           <li key={p.id} className="flex items-center justify-between p-2.5 text-[13px]">
             <span className="font-semibold">
               {p.name} <span className="text-[11px] text-slate-500">({p.currency})</span>
@@ -102,7 +102,7 @@ export function PredefinedPartyManager({ parties }: { parties: Party[] }) {
           disabled={pending}
           className="rounded-md bg-slate-900 px-3 py-1.5 text-[13px] font-semibold text-white disabled:opacity-50"
         >
-          Add party
+          Add bank
         </button>
       </form>
     </div>

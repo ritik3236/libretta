@@ -21,7 +21,7 @@ export function CustomerCard({
 
   return (
     <Link
-      href={`/parties/${customer.id}`}
+      href={`/banks/${customer.id}`}
       className="flex items-center gap-3 border-b border-slate-50 py-3 active:bg-slate-50"
     >
       <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-bold text-slate-600">

@@ -117,7 +117,7 @@ export async function getAdminOverview() {
     await Promise.all([
       prisma.user.count(),
       prisma.customer.count(),
-      prisma.predefinedParty.count(),
+      prisma.predefinedBank.count(),
       prisma.entry.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.currency.count(),
     ]);
@@ -142,7 +142,7 @@ export async function listAdminUsers() {
       name: true,
       businessName: true,
       baseCurrency: true,
-      canCreateParties: true,
+      canCreateBanks: true,
       createdAt: true,
       _count: { select: { customers: true, entries: true } },
     },
@@ -159,7 +159,7 @@ export async function getAdminUser(userId: string) {
       name: true,
       businessName: true,
       baseCurrency: true,
-      canCreateParties: true,
+      canCreateBanks: true,
       createdAt: true,
     },
   });
@@ -177,7 +177,7 @@ export async function getAdminUser(userId: string) {
         sourcePredefinedId: true,
       },
     }),
-    prisma.predefinedParty.findMany({
+    prisma.predefinedBank.findMany({
       where: { isActive: true },
       orderBy: { name: "asc" },
     }),
@@ -196,7 +196,7 @@ export async function getAdminUser(userId: string) {
       balance: Number(c.balanceMinor),
       fromPredefined: !!c.sourcePredefinedId,
     })),
-    // catalog parties not yet assigned to this user
+    // catalog banks not yet assigned to this user
     assignable: predefined.filter((p) => !assignedIds.has(p.id)),
   };
 }
@@ -345,6 +345,6 @@ export async function listAuditLogs(limit = 100) {
   });
 }
 
-export async function listPredefinedParties() {
-  return prisma.predefinedParty.findMany({ orderBy: { createdAt: "desc" } });
+export async function listPredefinedBanks() {
+  return prisma.predefinedBank.findMany({ orderBy: { createdAt: "desc" } });
 }

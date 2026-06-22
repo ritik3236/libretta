@@ -78,8 +78,8 @@ export default async function ReportSummaryPage({
         </div>
       </div>
 
-      <RankTable title="Top — you'll get" parties={data.topReceivables} currency={currency} />
-      <RankTable title="Top — you'll give" parties={data.topPayables} currency={currency} />
+      <RankTable title="Top — you'll get" banks={data.topReceivables} currency={currency} />
+      <RankTable title="Top — you'll give" banks={data.topPayables} currency={currency} />
 
       <p className="mt-8 text-center text-[11px] text-slate-400">
         Computer-generated summary from {appConfig.name}.
@@ -107,20 +107,20 @@ function SummaryBox({
 
 function RankTable({
   title,
-  parties,
+  banks,
   currency,
 }: {
   title: string;
-  parties: { id: string; name: string; balance: number }[];
+  banks: { id: string; name: string; balance: number }[];
   currency: string;
 }) {
-  if (parties.length === 0) return null;
+  if (banks.length === 0) return null;
   return (
     <div className="mt-6">
       <h2 className="mb-2 text-sm font-bold">{title}</h2>
       <table className="w-full border-collapse text-sm">
         <tbody>
-          {parties.map((p) => (
+          {banks.map((p) => (
             <tr key={p.id} className="border-b border-slate-100">
               <td className="py-2">{p.name}</td>
               <td className="py-2 text-right font-semibold">{formatAbs(p.balance, currency)}</td>

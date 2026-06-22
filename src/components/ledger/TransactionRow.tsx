@@ -1,12 +1,19 @@
 import Link from "next/link";
-import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { formatMoney } from "@/lib/money";
 import { formatDateShortIST } from "@/lib/datetime";
+import { statusMeta, type EntryStatus } from "@/lib/entry-status";
+import { cn } from "@/lib/utils";
 
+/**
+ * Homepage "Latest transactions" row. Cross-bank, so the bank name leads; the
+ * note sits beneath it. Amount carries direction via color (+green / −red) —
+ * no arrow icon. Taps through to the transaction's detail page.
+ */
 export function TransactionRow({
   tx,
 }: {
   tx: {
+    id: string;
     customerId: string;
     customerName: string;
     direction: "CREDIT" | "DEBIT";
@@ -14,31 +21,29 @@ export function TransactionRow({
     currency: string;
     note: string | null;
     occurredAt: Date;
+    status: EntryStatus;
   };
 }) {
   const gave = tx.direction === "CREDIT";
+  const sm = statusMeta(tx.status);
   return (
     <Link
-      href={`/parties/${tx.customerId}`}
-      className="flex items-center gap-3 border-b border-border/50 py-3 active:bg-muted/40"
+      href={`/entries/${tx.id}`}
+      className="flex items-start justify-between gap-3 border-b border-border/50 py-3 active:bg-muted/40"
     >
-      <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          gave ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-        }`}
-      >
-        {gave ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownLeft className="h-4 w-4" />}
-      </div>
       <div className="min-w-0">
-        <div className="truncate text-sm font-bold">{tx.customerName}</div>
-        <div className="truncate text-[11px] text-muted-foreground">
-          {tx.note || (gave ? "You gave" : "You got")} · {formatDateShortIST(tx.occurredAt)}
+        <div className="truncate text-sm font-bold text-slate-800">{tx.customerName}</div>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", sm.dot)} aria-hidden />
+          <span className="min-w-0 truncate">{tx.note || "No note"}</span>
+          <span className="shrink-0">· {formatDateShortIST(tx.occurredAt)}</span>
         </div>
       </div>
       <div
-        className={`ml-auto shrink-0 text-sm font-extrabold ${
-          gave ? "text-emerald-600" : "text-red-600"
-        }`}
+        className={cn(
+          "shrink-0 text-sm font-extrabold tabular-nums",
+          gave ? "text-emerald-600" : "text-red-600",
+        )}
       >
         {gave ? "+" : "−"}
         {formatMoney(tx.amount, tx.currency)}

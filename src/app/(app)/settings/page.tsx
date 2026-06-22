@@ -16,9 +16,9 @@ export default async function SettingsPage() {
 
   return (
     <>
-      <AppHeader title="Profile" />
+      <AppHeader title="Profile" contained />
 
-      <div className="px-5 pt-4">
+      <div className="mx-auto max-w-3xl px-5 pt-4 md:px-8 md:pt-6">
         <section className="flex items-center gap-3 rounded-2xl border bg-muted/40 p-4">
           <AccountButton />
           <div className="min-w-0">

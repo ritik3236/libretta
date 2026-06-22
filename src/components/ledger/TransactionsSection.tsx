@@ -19,6 +19,7 @@ type Tx = {
   currency: string;
   note: string | null;
   occurredAt: Date;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED";
 };
 
 type TypeFilter = "ALL" | "CREDIT" | "DEBIT";
@@ -44,7 +45,7 @@ export function TransactionsSection({
   const [customerIds, setCustomerIds] = useState<string[]>([]);
   const [from, setFrom] = useState<Date | null>(null);
   const [to, setTo] = useState<Date | null>(null);
-  const [partyOpen, setPartyOpen] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const fromTs = from ? startOfDay(from).getTime() : null;
@@ -77,7 +78,7 @@ export function TransactionsSection({
     return `/api/export/csv${qs ? `?${qs}` : ""}`;
   }, [type, currency, customerIds, from, to]);
 
-  function toggleParty(id: string) {
+  function toggleBank(id: string) {
     setCustomerIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
@@ -127,7 +128,7 @@ export function TransactionsSection({
           </p>
           {entries.length === 0 ? (
             <Link
-              href="/parties"
+              href="/banks"
               className="mt-3 inline-block rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
             >
               Add your first entry
@@ -195,25 +196,25 @@ export function TransactionsSection({
 
             {customers.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-semibold text-muted-foreground">Parties</p>
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">Banks</p>
                 <button
                   type="button"
-                  onClick={() => setPartyOpen((o) => !o)}
+                  onClick={() => setBankOpen((o) => !o)}
                   className="flex h-11 w-full items-center justify-between rounded-xl border border-input bg-background px-4 text-sm shadow-sm outline-none transition focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/30"
                 >
                   <span className={cn("truncate", customerIds.length === 0 && "text-muted-foreground")}>
                     {customerIds.length === 0
-                      ? "All parties"
+                      ? "All banks"
                       : customerIds.length === 1
-                        ? customers.find((c) => c.id === customerIds[0])?.name ?? "1 party"
-                        : `${customerIds.length} parties`}
+                        ? customers.find((c) => c.id === customerIds[0])?.name ?? "1 bank"
+                        : `${customerIds.length} banks`}
                   </span>
                   <ChevronDown
-                    className={cn("h-4 w-4 shrink-0 opacity-50 transition", partyOpen && "rotate-180")}
+                    className={cn("h-4 w-4 shrink-0 opacity-50 transition", bankOpen && "rotate-180")}
                   />
                 </button>
 
-                {partyOpen && (
+                {bankOpen && (
                   <div className="mt-1.5 max-h-56 overflow-y-auto overscroll-contain rounded-xl border bg-popover p-1">
                     {customerIds.length > 0 && (
                       <button
@@ -230,7 +231,7 @@ export function TransactionsSection({
                         <button
                           key={c.id}
                           type="button"
-                          onClick={() => toggleParty(c.id)}
+                          onClick={() => toggleBank(c.id)}
                           className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm hover:bg-accent"
                         >
                           <span className={cn("truncate", on && "font-semibold")}>{c.name}</span>

@@ -32,3 +32,18 @@ export function formatMoney(minor: number, currency: string, locale = "en-IN"): 
 export function formatAbs(minor: number, currency: string, locale = "en-IN"): string {
   return formatMoney(Math.abs(minor), currency, locale);
 }
+
+/**
+ * Group the integer part of a raw amount-input string (as typed on the keypad)
+ * with thousands/lakh separators for readable display, while preserving the
+ * partial decimal part and any trailing ".". The raw string itself is never
+ * mutated — this is display-only.
+ */
+export function groupAmountInput(raw: string, locale = "en-IN"): string {
+  if (!raw) return "0";
+  const [intPart, decPart] = raw.split(".");
+  const grouped = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+    Number(intPart || "0"),
+  );
+  return raw.includes(".") ? `${grouped}.${decPart ?? ""}` : grouped;
+}

@@ -32,9 +32,10 @@ export default async function DashboardPage() {
           </div>
         }
         right={<AccountButton />}
+        contained
       />
 
-      <div className="px-5 pt-4">
+      <div className="mx-auto max-w-3xl px-5 pt-4 md:px-8 md:pt-6">
         {/* You'll get / You'll give in base currency */}
         <section className="grid grid-cols-2 gap-3">
           <div className="rounded-3xl border border-emerald-100 bg-emerald-50/60 p-4">

@@ -4,23 +4,19 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { createEntry } from "@/server/actions/entries";
 import { istInputToUTC } from "@/lib/datetime";
 import { getCurrencyMeta } from "@/lib/currency";
+import { groupAmountInput } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ledger/DatePicker";
 import { NumberPad } from "@/components/ledger/NumberPad";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DirectionChip,
+  DateChipField,
+  NoteField,
+  BankChipField,
+} from "@/components/ledger/entry-chips";
 
 type CustomerOpt = { id: string; name: string; currency: string };
 
@@ -34,7 +30,7 @@ export function AddEntryForm({
   defaultCustomerId?: string;
   defaultDirection?: "CREDIT" | "DEBIT";
   /** When provided (e.g. inside a sheet), called after a successful save
-   *  instead of navigating to the party page. */
+   *  instead of navigating to the bank page. */
   onDone?: () => void;
 }) {
   const router = useRouter();
@@ -58,9 +54,9 @@ export function AddEntryForm({
   if (customers.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed bg-muted/40 p-6 text-center">
-        <p className="text-sm text-muted-foreground">Add a party first to record an entry.</p>
+        <p className="text-sm text-muted-foreground">Add a bank first to record an entry.</p>
         <Button asChild className="mt-4">
-          <Link href="/parties/new">Add party</Link>
+          <Link href="/banks/new">Add bank</Link>
         </Button>
       </div>
     );
@@ -93,12 +89,12 @@ export function AddEntryForm({
       return;
     }
 
-    // Full-page route: await the save, then navigate to the party ledger.
+    // Full-page route: await the save, then navigate to the bank ledger.
     startTransition(async () => {
       const res = await createEntry(payload);
       if (res.ok) {
         toast.success(gave ? "Recorded — you gave" : "Recorded — you got");
-        router.push(`/parties/${customerId}`);
+        router.push(`/banks/${customerId}`);
       } else {
         toast.error(res.error);
       }
@@ -106,79 +102,39 @@ export function AddEntryForm({
   }
 
   return (
-    <form onSubmit={submit} className="space-y-5">
-      {/* Direction toggle */}
-      <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted p-1.5">
-        <button
-          type="button"
-          onClick={() => setDirection("CREDIT")}
-          className={cn(
-            "flex items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-bold transition",
-            gave ? "bg-card text-primary shadow-sm" : "text-muted-foreground",
-          )}
-        >
-          <ArrowUpRight className="h-4 w-4" /> You gave
-        </button>
-        <button
-          type="button"
-          onClick={() => setDirection("DEBIT")}
-          className={cn(
-            "flex items-center justify-center gap-1.5 rounded-xl py-3 text-sm font-bold transition",
-            !gave ? "bg-card text-destructive shadow-sm" : "text-muted-foreground",
-          )}
-        >
-          <ArrowDownLeft className="h-4 w-4" /> You got
-        </button>
-      </div>
-
+    <form onSubmit={submit} className="space-y-4">
       {/* Amount */}
-      <div className="rounded-2xl border bg-muted/40 px-4 py-5 text-center">
-        <div className="text-xs font-semibold text-muted-foreground">Amount</div>
-        <div className="mt-1 flex items-center justify-center gap-1">
+      <div className="py-1 text-center">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Amount
+        </div>
+        <div className="mt-0.5 flex items-center justify-center gap-1">
           <span className="text-2xl font-bold text-muted-foreground">{symbol}</span>
           <span
             className={cn(
-              "text-4xl font-extrabold tracking-tight",
+              "text-[40px] font-extrabold leading-none tracking-tight",
               !amount && "text-muted-foreground/40",
             )}
           >
-            {amount || "0"}
+            {groupAmountInput(amount)}
           </span>
         </div>
       </div>
 
-      <NumberPad value={amount} onChange={setAmount} />
-
-      {/* Customer */}
-      <div className="space-y-1.5">
-        <Label>Party</Label>
-        <Select value={customerId} onValueChange={setCustomerId}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {customers.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name} ({getCurrencyMeta(c.currency)?.code ?? c.currency})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>Date</Label>
-        <DatePicker value={date} onChange={setDate} max={new Date()} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="note">Note</Label>
-        <Input
-          id="note"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder="optional"
+      {/* Bank fills the row; direction + date stay content-sized — one row, no wrap */}
+      <div className="flex items-center gap-2">
+        <DirectionChip value={direction} onChange={setDirection} className="shrink-0" />
+        <BankChipField
+          customers={customers}
+          value={customerId}
+          onChange={setCustomerId}
+          className="min-w-0 flex-1"
         />
+        <DateChipField value={date} onChange={setDate} max={new Date()} className="shrink-0" />
       </div>
+      <NoteField value={note} onChange={setNote} />
+
+      <NumberPad value={amount} onChange={setAmount} />
 
       <Button
         type="submit"

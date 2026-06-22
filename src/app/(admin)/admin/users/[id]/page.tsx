@@ -28,7 +28,7 @@ export default async function AdminUserDetailPage({
       </div>
       <UserDetailClient
         userId={user.id}
-        canCreateParties={user.canCreateParties}
+        canCreateBanks={user.canCreateBanks}
         customers={customers}
         assignable={assignable.map((p) => ({ id: p.id, name: p.name, currency: p.currency }))}
       />

@@ -1,7 +1,7 @@
 import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
 
-export type ReportParty = {
+export type ReportBank = {
   id: string;
   name: string;
   balance: number; // signed minor units
@@ -26,12 +26,12 @@ export type ReportData = {
     payableCount: number;
     settledCount: number;
   };
-  topReceivables: ReportParty[];
-  topPayables: ReportParty[];
-  aging: ReportParty[];
+  topReceivables: ReportBank[];
+  topPayables: ReportBank[];
+  aging: ReportBank[];
 };
 
-/** Distinct currencies the user has parties in (for the currency toggle). */
+/** Distinct currencies the user has banks in (for the currency toggle). */
 export async function getReportCurrencies(userId: string): Promise<string[]> {
   const rows = await prisma.customer.findMany({
     where: { userId },
@@ -90,7 +90,7 @@ export async function getReports(
   }
 
   // Balance-based sections (current, all-time) for this currency
-  const parties: ReportParty[] = customers.map((c) => ({
+  const banks: ReportBank[] = customers.map((c) => ({
     id: c.id,
     name: c.name,
     balance: Number(c.balanceMinor),
@@ -102,7 +102,7 @@ export async function getReports(
   let receivableCount = 0;
   let payableCount = 0;
   let settledCount = 0;
-  for (const p of parties) {
+  for (const p of banks) {
     if (p.balance > 0) {
       receivable += p.balance;
       receivableCount++;
@@ -112,15 +112,15 @@ export async function getReports(
     } else settledCount++;
   }
 
-  const topReceivables = parties
+  const topReceivables = banks
     .filter((p) => p.balance > 0)
     .sort((a, b) => b.balance - a.balance)
     .slice(0, 5);
-  const topPayables = parties
+  const topPayables = banks
     .filter((p) => p.balance < 0)
     .sort((a, b) => a.balance - b.balance)
     .slice(0, 5);
-  const aging = parties
+  const aging = banks
     .filter((p) => p.balance !== 0)
     .sort((a, b) => a.lastActivity.getTime() - b.lastActivity.getTime())
     .slice(0, 5);

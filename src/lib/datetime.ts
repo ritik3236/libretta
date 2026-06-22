@@ -50,6 +50,14 @@ export function formatDateTimeIST(date: Date): string {
   return `${p.day} ${p.month} ${p.year} ${p.hour}:${p.minute} ${p.dayPeriod} IST`;
 }
 
+/** "8 Jun 26, 5:42 PM" — compact date + time in IST (no "IST" suffix, for lists). */
+export function formatDateTimeShortIST(date: Date): string {
+  const p = Object.fromEntries(
+    DATETIME_FMT.formatToParts(date).map((x) => [x.type, x.value]),
+  ) as Record<string, string>;
+  return `${p.day} ${p.month} ${p.year}, ${p.hour}:${p.minute} ${p.dayPeriod}`;
+}
+
 /** "8 Jun 2026" — date only, in IST. */
 export function formatDateIST(date: Date): string {
   return DATE_FMT.format(date);

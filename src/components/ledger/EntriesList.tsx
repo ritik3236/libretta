@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { EntryRow } from "./EntryRow";
 
@@ -15,16 +16,11 @@ type Entry = {
 };
 
 /**
- * Window-virtualized entry list — only the visible rows are mounted, so a party
- * with thousands of entries stays fast. Tapping a row opens the edit sheet.
+ * Window-virtualized entry list — only the visible rows are mounted, so a bank
+ * with thousands of entries stays fast. Tapping a row opens its detail page.
+ * Optimistic rows (tmp- ids, not yet persisted) render non-clickable.
  */
-export function EntriesList({
-  entries,
-  onSelect,
-}: {
-  entries: Entry[];
-  onSelect: (e: Entry) => void;
-}) {
+export function EntriesList({ entries }: { entries: Entry[] }) {
   const listRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
 
@@ -39,7 +35,7 @@ export function EntriesList({
 
   const virtualizer = useWindowVirtualizer({
     count: entries.length,
-    estimateSize: () => 64,
+    estimateSize: () => 72,
     overscan: 8,
     scrollMargin,
   });
@@ -48,6 +44,7 @@ export function EntriesList({
     <div ref={listRef} style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
       {virtualizer.getVirtualItems().map((vi) => {
         const e = entries[vi.index];
+        const pending = e.id.startsWith("tmp-");
         return (
           <div
             key={e.id}
@@ -61,13 +58,18 @@ export function EntriesList({
               transform: `translateY(${vi.start - scrollMargin}px)`,
             }}
           >
-            <button
-              type="button"
-              onClick={() => onSelect(e)}
-              className="block w-full border-b border-border/60 text-left transition active:bg-muted/40"
-            >
-              <EntryRow entry={e} />
-            </button>
+            {pending ? (
+              <div className="block w-full border-b border-border/60 opacity-60">
+                <EntryRow entry={e} />
+              </div>
+            ) : (
+              <Link
+                href={`/entries/${e.id}`}
+                className="block w-full border-b border-border/60 text-left transition active:bg-muted/40"
+              >
+                <EntryRow entry={e} />
+              </Link>
+            )}
           </div>
         );
       })}

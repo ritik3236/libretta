@@ -5,7 +5,7 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { CustomerCard } from "./CustomerCard";
 
-type Party = {
+type Bank = {
   id: string;
   name: string;
   currency: string;
@@ -13,7 +13,7 @@ type Party = {
   updatedAt: Date;
 };
 
-export function PartiesList({ customers }: { customers: Party[] }) {
+export function BanksList({ customers }: { customers: Bank[] }) {
   const [q, setQ] = useState("");
 
   const filtered = useMemo(() => {
@@ -29,7 +29,7 @@ export function PartiesList({ customers }: { customers: Party[] }) {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search parties"
+          placeholder="Search banks"
           className="h-11 pl-9 text-sm"
           autoComplete="off"
         />
@@ -37,7 +37,7 @@ export function PartiesList({ customers }: { customers: Party[] }) {
 
       {filtered.length === 0 ? (
         <p className="py-10 text-center text-sm text-muted-foreground">
-          No parties match “{q.trim()}”.
+          No banks match “{q.trim()}”.
         </p>
       ) : (
         filtered.map((c) => <CustomerCard key={c.id} customer={c} />)

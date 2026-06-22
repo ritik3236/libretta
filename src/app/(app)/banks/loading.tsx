@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
-export default function PartiesLoading() {
+export default function BanksLoading() {
   return (
     <>
       <div

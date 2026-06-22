@@ -33,8 +33,8 @@ export function AddCustomerForm() {
     startTransition(async () => {
       const res = await createCustomer(form);
       if (res.ok) {
-        toast.success("Party added");
-        router.push(`/parties/${res.id}`);
+        toast.success("Bank added");
+        router.push(`/banks/${res.id}`);
       } else {
         toast.error(res.error);
       }
@@ -44,7 +44,7 @@ export function AddCustomerForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="name">Party name</Label>
+        <Label htmlFor="name">Bank name</Label>
         <Input
           id="name"
           autoFocus
@@ -93,7 +93,7 @@ export function AddCustomerForm() {
       </div>
 
       <Button type="submit" size="lg" disabled={pending} className="w-full">
-        {pending ? "Saving…" : "Save party"}
+        {pending ? "Saving…" : "Save bank"}
       </Button>
     </form>
   );

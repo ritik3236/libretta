@@ -71,7 +71,7 @@ export function ProfileForm({
           </SelectContent>
         </Select>
         <p className="text-[11px] text-muted-foreground">
-          Used for the dashboard totals and as the default for new parties.
+          Used for the dashboard totals and as the default for new banks.
         </p>
       </div>
 

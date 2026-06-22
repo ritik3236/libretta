@@ -65,7 +65,7 @@ export const RANGE_OPS: FilterOp[] = ["between"];
 
 export const FIELDS: FieldDef[] = [
   { key: "user", label: "User", type: "enum", dynamic: true },
-  { key: "customer", label: "Party", type: "string" },
+  { key: "customer", label: "Bank", type: "string" },
   {
     key: "direction",
     label: "Type",
@@ -176,7 +176,7 @@ export function buildQuery(
   return params;
 }
 
-/** Human summary of a filter set, e.g. "Party ~ Cello · Status ∈ PENDING, APPROVED". */
+/** Human summary of a filter set, e.g. "Bank ~ Cello · Status ∈ PENDING, APPROVED". */
 export function summarize(filters: Filter[]): string {
   if (filters.length === 0) return "No filters";
   return filters

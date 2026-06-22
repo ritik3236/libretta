@@ -16,7 +16,7 @@ const predefinedSchema = z.object({
   note: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-export async function createPredefinedParty(input: unknown): Promise<AdminResult> {
+export async function createPredefinedBank(input: unknown): Promise<AdminResult> {
   const actorId = await requireRole();
   const parsed = predefinedSchema.safeParse(input);
   if (!parsed.success) {
@@ -26,42 +26,42 @@ export async function createPredefinedParty(input: unknown): Promise<AdminResult
   if (!(await isActiveCurrencyDB(currency))) {
     return { ok: false, error: "Unsupported currency" };
   }
-  const party = await prisma.predefinedParty.create({
+  const bank = await prisma.predefinedBank.create({
     data: { name, phone: phone || null, currency, note: note || null },
   });
-  await writeAudit(actorId, "PREDEFINED_PARTY_CREATE", "PredefinedParty", party.id, { name, currency });
-  revalidatePath("/admin/parties");
-  return { ok: true, id: party.id };
+  await writeAudit(actorId, "PREDEFINED_PARTY_CREATE", "PredefinedBank", bank.id, { name, currency });
+  revalidatePath("/admin/banks");
+  return { ok: true, id: bank.id };
 }
 
-export async function togglePredefinedPartyActive(
+export async function togglePredefinedBankActive(
   id: string,
   isActive: boolean,
 ): Promise<AdminResult> {
   const actorId = await requireRole();
-  const existing = await prisma.predefinedParty.findUnique({ where: { id } });
-  if (!existing) return { ok: false, error: "Party not found" };
-  await prisma.predefinedParty.update({ where: { id }, data: { isActive } });
-  await writeAudit(actorId, "PREDEFINED_PARTY_TOGGLE", "PredefinedParty", id, { isActive });
-  revalidatePath("/admin/parties");
+  const existing = await prisma.predefinedBank.findUnique({ where: { id } });
+  if (!existing) return { ok: false, error: "Bank not found" };
+  await prisma.predefinedBank.update({ where: { id }, data: { isActive } });
+  await writeAudit(actorId, "PREDEFINED_PARTY_TOGGLE", "PredefinedBank", id, { isActive });
+  revalidatePath("/admin/banks");
   return { ok: true };
 }
 
 /**
- * Assigns a predefined party to a user by creating a per-user Customer seeded
+ * Assigns a predefined bank to a user by creating a per-user Customer seeded
  * from the template. Skips if already assigned (sourcePredefinedId).
  */
-export async function assignPredefinedPartyToUser(
+export async function assignPredefinedBankToUser(
   userId: string,
   predefinedId: string,
 ): Promise<AdminResult> {
   const actorId = await requireRole();
   const [user, template] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
-    prisma.predefinedParty.findUnique({ where: { id: predefinedId } }),
+    prisma.predefinedBank.findUnique({ where: { id: predefinedId } }),
   ]);
   if (!user) return { ok: false, error: "User not found" };
-  if (!template) return { ok: false, error: "Predefined party not found" };
+  if (!template) return { ok: false, error: "Predefined bank not found" };
 
   const already = await prisma.customer.findFirst({
     where: { userId, sourcePredefinedId: predefinedId },

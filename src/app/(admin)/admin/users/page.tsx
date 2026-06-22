@@ -13,7 +13,7 @@ export default async function AdminUsersPage() {
             <tr className="border-b border-slate-200 text-left text-slate-500">
               <th className="py-2 font-semibold">User</th>
               <th className="font-semibold">Base</th>
-              <th className="font-semibold">Parties</th>
+              <th className="font-semibold">Banks</th>
               <th className="font-semibold">Entries</th>
               <th className="font-semibold">Can create</th>
             </tr>
@@ -36,12 +36,12 @@ export default async function AdminUsersPage() {
                 <td>
                   <span
                     className={
-                      u.canCreateParties
+                      u.canCreateBanks
                         ? "rounded bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700"
                         : "rounded bg-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-600"
                     }
                   >
-                    {u.canCreateParties ? "Yes" : "No"}
+                    {u.canCreateBanks ? "Yes" : "No"}
                   </span>
                 </td>
               </tr>

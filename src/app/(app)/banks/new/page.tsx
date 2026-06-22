@@ -8,14 +8,14 @@ export default async function NewCustomerPage() {
   const userId = await requireUser();
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { canCreateParties: true },
+    select: { canCreateBanks: true },
   });
   // Admin may have disabled self-creation for this user.
-  if (!user?.canCreateParties) redirect("/parties");
+  if (!user?.canCreateBanks) redirect("/banks");
 
   return (
     <>
-      <AppHeader title="New party" backHref="/parties" />
+      <AppHeader title="New bank" backHref="/banks" />
       <div className="px-5 pt-4">
         <AddCustomerForm />
       </div>

@@ -75,8 +75,8 @@ async function adminSetStatus(
 
   await writeAudit(actorId, action, "Entry", entryId, { from: entry.status, to: next });
   revalidatePath("/admin/entries");
-  revalidatePath(`/parties/${entry.customerId}`);
-  revalidatePath("/parties");
+  revalidatePath(`/banks/${entry.customerId}`);
+  revalidatePath("/banks");
   revalidatePath("/dashboard");
   return { ok: true };
 }

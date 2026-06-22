@@ -16,9 +16,10 @@ model User {
   name         String?
   businessName String?
   baseCurrency String     @default("INR")
-  // Admin-toggleable: may this user create their own parties (in addition to
+  // Admin-toggleable: may this user create their own banks (in addition to
   // any the admin assigns)? Default true preserves existing behavior.
-  canCreateParties Boolean @default(true)
+  // Renamed party→bank at the app layer; DB column kept via @map (no migration).
+  canCreateBanks Boolean @default(true) @map("canCreateParties")
   createdAt    DateTime   @default(now()) @db.Timestamp(3)
   updatedAt    DateTime   @updatedAt @db.Timestamp(3)
   customers    Customer[]
@@ -128,9 +129,10 @@ model Currency {
   @@map("lb_currencies")
 }
 
-// Admin-managed catalog of party templates. Assigning one to a user copies its
+// Admin-managed catalog of bank templates. Assigning one to a user copies its
 // fields into a new per-user Customer (Customer.sourcePredefinedId = this id).
-model PredefinedParty {
+// Model renamed party→bank; physical table kept via @@map (no migration).
+model PredefinedBank {
   id        String   @id @default(cuid())
   name      String
   phone     String?

@@ -12,20 +12,20 @@ export function DeleteCustomerButton({ id, name }: { id: string; name: string })
   return (
     <ConfirmDialog
       title={`Delete ${name}?`}
-      description="This permanently removes the party and all their entries. This can't be undone."
-      confirmLabel="Delete party"
+      description="This permanently removes the bank and all its entries. This can't be undone."
+      confirmLabel="Delete bank"
       onConfirm={async () => {
         const res = await deleteCustomer(id);
         if (res.ok) {
           toast.success("Customer deleted");
-          router.replace("/parties");
+          router.replace("/banks");
         } else {
           toast.error(res.error);
         }
       }}
       trigger={
         <button
-          aria-label="Delete party"
+          aria-label="Delete bank"
           className="flex h-9 w-9 items-center justify-center rounded-xl border text-destructive transition hover:bg-destructive/10 active:scale-95"
         >
           <Trash2 className="h-5 w-5" />

@@ -30,7 +30,7 @@ export async function GET(req: Request) {
   const header = [
     "Date",
     "User",
-    "Party",
+    "Bank",
     "Type",
     "Amount",
     "Currency",

@@ -21,10 +21,10 @@ export async function createCustomer(input: unknown): Promise<ActionResult> {
   // Permission gate: an admin may have disabled self-creation for this user.
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { canCreateParties: true },
+    select: { canCreateBanks: true },
   });
-  if (!user?.canCreateParties) {
-    return { ok: false, error: "You don't have permission to create parties." };
+  if (!user?.canCreateBanks) {
+    return { ok: false, error: "You don't have permission to create banks." };
   }
   if (!(await isActiveCurrencyDB(currency))) {
     return { ok: false, error: "Unsupported currency" };
@@ -40,7 +40,7 @@ export async function createCustomer(input: unknown): Promise<ActionResult> {
     },
   });
 
-  revalidatePath("/parties");
+  revalidatePath("/banks");
   revalidatePath("/dashboard");
   return { ok: true, id: customer.id };
 }
@@ -51,7 +51,7 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
   if (!existing) return { ok: false, error: "Customer not found" };
 
   await prisma.customer.delete({ where: { id } });
-  revalidatePath("/parties");
+  revalidatePath("/banks");
   revalidatePath("/dashboard");
   return { ok: true, id };
 }

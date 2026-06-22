@@ -14,8 +14,8 @@ export type ActionResult =
   | { ok: false; error: string };
 
 function revalidateEntryPaths(customerId: string) {
-  revalidatePath(`/parties/${customerId}`);
-  revalidatePath("/parties");
+  revalidatePath(`/banks/${customerId}`);
+  revalidatePath("/banks");
   revalidatePath("/dashboard");
 }
 
