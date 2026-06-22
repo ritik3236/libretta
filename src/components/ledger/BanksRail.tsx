@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, UserPlus } from "lucide-react";
+import { Search, UserPlus, ArrowUp, ArrowDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatAbs } from "@/lib/money";
 import { cn, initials } from "@/lib/utils";
@@ -15,6 +15,19 @@ type Bank = {
   balance: number;
   updatedAt: Date;
 };
+
+type SortKey = "name" | "balance" | "recent";
+type SortDir = "asc" | "desc";
+
+const SORTS: { key: SortKey; label: string }[] = [
+  { key: "name", label: "Name" },
+  { key: "balance", label: "Balance" },
+  { key: "recent", label: "Recent" },
+];
+
+// Sensible starting direction per field: A→Z names, biggest balance first,
+// newest activity first.
+const DEFAULT_DIR: Record<SortKey, SortDir> = { name: "asc", balance: "desc", recent: "desc" };
 
 /**
  * Desktop master list for the two-pane banks view — a compact, searchable rail
@@ -30,12 +43,33 @@ export function BanksRail({
 }) {
   const pathname = usePathname();
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState<SortKey>("recent");
+  const [dir, setDir] = useState<SortDir>("desc");
 
-  const filtered = useMemo(() => {
+  function changeSort(key: SortKey) {
+    if (key === sort) setDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSort(key);
+      setDir(DEFAULT_DIR[key]);
+    }
+  }
+
+  const visible = useMemo(() => {
     const query = q.trim().toLowerCase();
-    if (!query) return customers;
-    return customers.filter((c) => c.name.toLowerCase().includes(query));
-  }, [customers, q]);
+    const matched = query
+      ? customers.filter((c) => c.name.toLowerCase().includes(query))
+      : customers;
+    const sorted = [...matched].sort((a, b) => {
+      const cmp =
+        sort === "name"
+          ? a.name.localeCompare(b.name)
+          : sort === "balance"
+            ? a.balance - b.balance
+            : a.updatedAt.getTime() - b.updatedAt.getTime();
+      return dir === "asc" ? cmp : -cmp;
+    });
+    return sorted;
+  }, [customers, q, sort, dir]);
 
   return (
     <div className="flex h-full flex-col">
@@ -61,15 +95,47 @@ export function BanksRail({
             autoComplete="off"
           />
         </div>
+
+        <div
+          role="group"
+          aria-label="Sort banks"
+          className="mt-2 flex items-center gap-0.5 rounded-lg bg-muted/60 p-0.5"
+        >
+          {SORTS.map((s) => {
+            const active = sort === s.key;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => changeSort(s.key)}
+                aria-pressed={active}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-0.5 rounded-md py-1 text-[11px] font-semibold transition",
+                  active
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {s.label}
+                {active &&
+                  (dir === "asc" ? (
+                    <ArrowUp className="h-3 w-3" />
+                  ) : (
+                    <ArrowDown className="h-3 w-3" />
+                  ))}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
-        {filtered.length === 0 ? (
+        {visible.length === 0 ? (
           <p className="px-2 py-8 text-center text-xs text-muted-foreground">
             {customers.length === 0 ? "No banks yet." : `No match for “${q.trim()}”.`}
           </p>
         ) : (
-          filtered.map((c) => {
+          visible.map((c) => {
             const active = pathname === `/banks/${c.id}`;
             const settled = c.balance === 0;
             const positive = c.balance >= 0;
