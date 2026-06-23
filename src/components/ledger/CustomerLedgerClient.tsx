@@ -143,32 +143,32 @@ export function CustomerLedgerClient({
     <>
       {/* Balance + totals in one card (optimistic, server-aggregated) */}
       <section
-        className={`rounded-3xl p-5 text-white ${
+        className={`rounded-2xl p-3.5 text-white ${
           settled ? "bg-slate-700" : positive ? "bg-emerald-600" : "bg-red-600"
         }`}
       >
-        <p className="text-xs font-semibold opacity-80">
+        <p className="text-[11px] font-semibold opacity-80">
           {settled ? "All settled" : positive ? "You'll get" : "You'll give"}
         </p>
         <CountUp
           minor={Math.abs(optimistic.balance)}
           currency={cur}
-          className="mt-1 block font-extrabold tracking-tight"
-          baseSize={30}
-          minSize={16}
+          className="mt-0.5 block font-extrabold tracking-tight"
+          baseSize={24}
+          minSize={15}
         />
-        <div className="mt-4 grid grid-cols-2 border-t border-white/20 pt-4">
+        <div className="mt-2.5 grid grid-cols-2 border-t border-white/20 pt-2.5">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">
-              <ArrowUpRight className="h-3.5 w-3.5" /> Total you gave
+            <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide opacity-80">
+              <ArrowUpRight className="h-3 w-3" /> Total you gave
             </div>
-            <div className="mt-0.5 text-sm font-extrabold">{formatMoney(optimistic.totalGave, cur)}</div>
+            <div className="mt-0.5 text-[13px] font-extrabold">{formatMoney(optimistic.totalGave, cur)}</div>
           </div>
-          <div className="border-l border-white/20 pl-4">
-            <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide opacity-80">
-              <ArrowDownLeft className="h-3.5 w-3.5" /> Total you got
+          <div className="border-l border-white/20 pl-3">
+            <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide opacity-80">
+              <ArrowDownLeft className="h-3 w-3" /> Total you got
             </div>
-            <div className="mt-0.5 text-sm font-extrabold">{formatMoney(optimistic.totalGot, cur)}</div>
+            <div className="mt-0.5 text-[13px] font-extrabold">{formatMoney(optimistic.totalGot, cur)}</div>
           </div>
         </div>
       </section>
