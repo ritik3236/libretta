@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { AddEntryForm } from "@/components/ledger/AddEntryForm";
+import { AddEntryPill } from "@/components/ledger/AddEntryPill";
 
 export type CustomerOpt = { id: string; name: string; currency: string };
 
@@ -31,25 +32,7 @@ export function AddEntrySheet({
   return (
     <>
       {variant === "fab" ? (
-        <div className="inline-flex items-stretch overflow-hidden rounded-full bg-white shadow-lg ring-1 ring-black/5">
-          <button
-            type="button"
-            onClick={() => openWith("CREDIT")}
-            aria-label="Add entry — you gave"
-            className="flex h-11 w-12 items-center justify-center text-emerald-600 transition active:bg-emerald-50"
-          >
-            <ArrowUpRight className="h-5 w-5" strokeWidth={2.5} />
-          </button>
-          <span aria-hidden className="w-px self-stretch bg-border" />
-          <button
-            type="button"
-            onClick={() => openWith("DEBIT")}
-            aria-label="Add entry — you got"
-            className="flex h-11 w-12 items-center justify-center text-red-600 transition active:bg-red-50"
-          >
-            <ArrowDownLeft className="h-5 w-5" strokeWidth={2.5} />
-          </button>
-        </div>
+        <AddEntryPill onGave={() => openWith("CREDIT")} onGot={() => openWith("DEBIT")} />
       ) : (
         <div className="grid grid-cols-2 overflow-hidden rounded-xl border border-border">
           <button

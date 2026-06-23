@@ -6,6 +6,7 @@ import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { createEntry, loadMoreEntries } from "@/server/actions/entries";
 import { istInputToUTC } from "@/lib/datetime";
 import { CountUp } from "./CountUp";
+import { AddEntryPill } from "./AddEntryPill";
 import { EntriesList } from "./EntriesList";
 import { NumberPad } from "./NumberPad";
 import { DirectionChip, DateChipField, NoteField } from "./entry-chips";
@@ -193,20 +194,12 @@ export function CustomerLedgerClient({
         )}
       </section>
 
-      {/* Thumb-zone dual CTA on mobile; flows inline at the foot of the pane on desktop. */}
-      <div className="fixed bottom-[84px] left-1/2 z-20 grid w-full max-w-[480px] -translate-x-1/2 grid-cols-2 gap-3 px-5 md:static md:mt-6 md:max-w-none md:translate-x-0 md:px-0">
-        <button
-          onClick={() => openAdd("DEBIT")}
-          className="flex items-center justify-center gap-1.5 rounded-2xl bg-red-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 active:scale-[.98]"
-        >
-          <ArrowDownLeft className="h-4 w-4" /> You got
-        </button>
-        <button
-          onClick={() => openAdd("CREDIT")}
-          className="flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 active:scale-[.98]"
-        >
-          <ArrowUpRight className="h-4 w-4" /> You gave
-        </button>
+      {/* Same floating ↗/↘ pill as the dashboard FAB, pre-scoped to this bank.
+          Floats above the bottom nav on mobile, bottom-right of the pane on desktop. */}
+      <div className="pointer-events-none fixed bottom-0 left-1/2 z-40 w-full max-w-[480px] -translate-x-1/2 md:left-auto md:right-0 md:max-w-none md:translate-x-0">
+        <div className="pointer-events-auto absolute right-5 bottom-[calc(72px+env(safe-area-inset-bottom))] md:right-8 md:bottom-8">
+          <AddEntryPill onGave={() => openAdd("CREDIT")} onGot={() => openAdd("DEBIT")} />
+        </div>
       </div>
 
       {/* Add sheet */}
