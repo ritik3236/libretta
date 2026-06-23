@@ -1,4 +1,3 @@
-import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
 
 export type ReportBank = {
@@ -48,45 +47,53 @@ export async function getReports(
   from: Date,
   to: Date,
 ): Promise<ReportData> {
-  const [customers, entries] = await Promise.all([
+  // Aggregate the period's activity in the DB (group by IST month + direction)
+  // rather than streaming every in-range entry into Node and reducing in JS.
+  // Served by the [userId, currency, occurredAt] index; result is ≤2 rows/month.
+  const [customers, monthRows] = await Promise.all([
     prisma.customer.findMany({
       where: { userId, currency },
       select: { id: true, name: true, balanceMinor: true, updatedAt: true },
     }),
-    prisma.entry.findMany({
-      where: {
-        userId,
-        currency,
-        occurredAt: { gte: from, lte: to },
-        status: { not: EntryStatus.ARCHIVED },
-      },
-      select: { direction: true, amountMinor: true, occurredAt: true },
-      orderBy: { occurredAt: "asc" },
-    }),
+    prisma.$queryRaw<{ ym: string; direction: string; total: bigint }[]>`
+      SELECT DATE_FORMAT(CONVERT_TZ(occurredAt, '+00:00', '+05:30'), '%Y-%m') AS ym,
+             direction,
+             CAST(SUM(amountMinor) AS SIGNED) AS total
+      FROM lb_entries
+      WHERE userId = ${userId}
+        AND currency = ${currency}
+        AND occurredAt >= ${from}
+        AND occurredAt <= ${to}
+        AND status <> 'ARCHIVED'
+      GROUP BY DATE_FORMAT(CONVERT_TZ(occurredAt, '+00:00', '+05:30'), '%Y-%m'), direction
+      ORDER BY ym ASC
+    `,
   ]);
 
-  // Period activity → summary + monthly buckets
+  // Fold per-(month, direction) sums into monthly points + the period summary.
   let gave = 0;
   let got = 0;
-  const monthMap = new Map<string, { label: string; gave: number; got: number }>();
-  for (const e of entries) {
-    const amt = Number(e.amountMinor);
-    if (e.direction === "CREDIT") gave += amt;
-    else got += amt;
-    const d = e.occurredAt;
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const m =
-      monthMap.get(key) ?? { label: d.toLocaleString("en", { month: "short" }), gave: 0, got: 0 };
-    if (e.direction === "CREDIT") m.gave += amt;
-    else m.got += amt;
-    monthMap.set(key, m);
+  const monthMap = new Map<string, { gave: number; got: number }>();
+  for (const r of monthRows) {
+    const amt = Number(r.total);
+    const m = monthMap.get(r.ym) ?? { gave: 0, got: 0 };
+    if (r.direction === "CREDIT") {
+      m.gave += amt;
+      gave += amt;
+    } else {
+      m.got += amt;
+      got += amt;
+    }
+    monthMap.set(r.ym, m);
   }
   const monthly: MonthlyPoint[] = [];
   let running = 0;
-  for (const key of [...monthMap.keys()].sort()) {
-    const m = monthMap.get(key)!;
+  for (const ym of [...monthMap.keys()].sort()) {
+    const m = monthMap.get(ym)!;
     running += m.gave - m.got;
-    monthly.push({ label: m.label, gave: m.gave, got: m.got, net: running });
+    const [y, mo] = ym.split("-").map(Number);
+    const label = new Date(y, mo - 1, 1).toLocaleString("en", { month: "short" });
+    monthly.push({ label, gave: m.gave, got: m.got, net: running });
   }
 
   // Balance-based sections (current, all-time) for this currency

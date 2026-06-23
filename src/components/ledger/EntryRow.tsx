@@ -23,11 +23,11 @@ export function EntryRow({
   const sm = statusMeta(entry.status);
 
   return (
-    <div className="flex items-start justify-between gap-3 py-3">
-      <div className="min-w-0">
+    <div className="flex items-start justify-between gap-4 py-3">
+      <div className="min-w-0 flex-1">
         <div
           className={cn(
-            "line-clamp-2 text-sm leading-snug",
+            "whitespace-pre-wrap break-words text-sm leading-snug",
             entry.note ? "font-medium text-slate-800" : "text-slate-400",
           )}
         >

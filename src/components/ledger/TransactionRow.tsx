@@ -26,16 +26,17 @@ export function TransactionRow({
 }) {
   const gave = tx.direction === "CREDIT";
   const sm = statusMeta(tx.status);
-  return (
-    <Link
-      href={`/entries/${tx.id}`}
-      className="flex items-start justify-between gap-3 border-b border-border/50 py-3 active:bg-muted/40"
-    >
+  // Optimistic rows (added from the global sheet, not yet saved) have a temp id
+  // and no detail page — render them inert and dimmed until the save confirms.
+  const optimistic = tx.id.startsWith("tmp-");
+
+  const inner = (
+    <>
       <div className="min-w-0">
         <div className="truncate text-sm font-bold text-slate-800">{tx.customerName}</div>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", sm.dot)} aria-hidden />
-          <span className="min-w-0 truncate">{tx.note || "No note"}</span>
+          <span className="min-w-0 truncate">{optimistic ? "Saving…" : tx.note || "No note"}</span>
           <span className="shrink-0">· {formatDateShortIST(tx.occurredAt)}</span>
         </div>
       </div>
@@ -48,6 +49,22 @@ export function TransactionRow({
         {gave ? "+" : "−"}
         {formatMoney(tx.amount, tx.currency)}
       </div>
+    </>
+  );
+
+  const className = "flex items-start justify-between gap-3 border-b border-border/50 py-3";
+
+  if (optimistic) {
+    return (
+      <div className={cn(className, "animate-pulse opacity-60")} aria-busy>
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <Link href={`/entries/${tx.id}`} className={cn(className, "active:bg-muted/40")}>
+      {inner}
     </Link>
   );
 }

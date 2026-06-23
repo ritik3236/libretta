@@ -54,7 +54,7 @@ export default async function CustomerLedgerPage({
         contained
       />
 
-      <div className="mx-auto max-w-3xl px-5 pt-4 pb-4 md:px-8 md:pt-6">
+      <div className="mx-auto max-w-3xl px-5 pt-4 pb-4 md:max-w-none md:px-8 md:pt-6">
         <CustomerLedgerClient
           customer={{
             id: customer.id,
@@ -65,6 +65,8 @@ export default async function CustomerLedgerPage({
           entries={customer.entries}
           totalGave={customer.totalGave}
           totalGot={customer.totalGot}
+          initialCursor={customer.nextCursor}
+          initialHasMore={customer.hasMore}
         />
       </div>
     </>

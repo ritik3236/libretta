@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useTransition } from "react";
+import { Fragment, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronRight, ChevronDown, MoreHorizontal } from "lucide-react";
@@ -15,13 +15,22 @@ import {
 } from "@/server/actions/admin/entries";
 import type { AdminEntryRow, AdminEntryVersion } from "@/server/queries/admin";
 import { formatAbs } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
-const statusStyle: Record<string, string> = {
+const statusPill: Record<string, string> = {
   PENDING: "bg-amber-100 text-amber-700",
   APPROVED: "bg-emerald-100 text-emerald-700",
   REJECTED: "bg-red-100 text-red-700",
   ARCHIVED: "bg-slate-200 text-slate-500",
+};
+
+// 3px left-edge accent — the at-a-glance status signal in dense view.
+const statusAccent: Record<string, string> = {
+  PENDING: "border-l-amber-400",
+  APPROVED: "border-l-emerald-500",
+  REJECTED: "border-l-red-400",
+  ARCHIVED: "border-l-slate-300",
 };
 
 // emerald-700 / red-600 — AA-safe direction colors
@@ -29,8 +38,10 @@ const dirColor = (d: "CREDIT" | "DEBIT") =>
   d === "CREDIT" ? "text-emerald-700" : "text-red-600";
 
 type ActFn = (id: string) => Promise<{ ok: boolean; error?: string }>;
+type View = "grid" | "dense";
 
 const BULK = "__bulk__";
+const VIEW_KEY = "adminEntriesView";
 
 export function AdminEntriesTable({ rows }: { rows: AdminEntryRow[] }) {
   const router = useRouter();
@@ -38,10 +49,28 @@ export function AdminEntriesTable({ rows }: { rows: AdminEntryRow[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [versions, setVersions] = useState<Record<string, AdminEntryVersion[]>>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Which row (or the bulk op) is currently mutating — so we disable only that
-  // row's buttons, not every row in the table.
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [view, setView] = useState<View>("grid");
   const bulkBusy = busyId === BULK;
+
+  // Restore the saved view preference on mount (SSR renders the "grid" default).
+  useEffect(() => {
+    const saved = localStorage.getItem(VIEW_KEY);
+    if (saved === "grid" || saved === "dense") setView(saved);
+  }, []);
+  function changeView(v: View) {
+    setView(v);
+    localStorage.setItem(VIEW_KEY, v);
+  }
+
+  const grid = view === "grid";
+  // Grid: every cell ruled (spreadsheet). Dense: row separators only, tighter.
+  const cell = grid
+    ? "border border-slate-200 px-2.5 py-1.5 align-middle"
+    : "border-b border-slate-100 px-2 py-1 align-middle";
+  const headCell = grid
+    ? "border border-slate-200 px-2.5 py-2"
+    : "border-b border-slate-200 px-2 py-1.5";
 
   const pendingIds = rows.filter((r) => r.status === "PENDING").map((r) => r.id);
   const allSelected = pendingIds.length > 0 && pendingIds.every((id) => selected.has(id));
@@ -111,176 +140,205 @@ export function AdminEntriesTable({ rows }: { rows: AdminEntryRow[] }) {
 
   return (
     <div>
-      {/* Bulk action bar */}
-      {selected.size > 0 && (
-        <div className="mb-2 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[13px]">
-          <span className="font-semibold text-emerald-800">{selected.size} selected</span>
-          <button
-            type="button"
-            disabled={bulkBusy}
-            onClick={approveSelected}
-            className="rounded-md bg-emerald-700 px-3 py-1 font-semibold text-white disabled:opacity-50"
-          >
-            {bulkBusy ? "Approving…" : "Approve selected"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelected(new Set())}
-            className="font-semibold text-slate-500 hover:underline"
-          >
-            Clear
-          </button>
+      {/* Toolbar: bulk actions (left) + view switch (right) */}
+      <div className="mb-2 flex items-center gap-3">
+        {selected.size > 0 ? (
+          <div className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[13px]">
+            <span className="font-semibold text-emerald-800">{selected.size} selected</span>
+            <button
+              type="button"
+              disabled={bulkBusy}
+              onClick={approveSelected}
+              className="rounded-md bg-emerald-700 px-3 py-1 font-semibold text-white disabled:opacity-50"
+            >
+              {bulkBusy ? "Approving…" : "Approve selected"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              className="font-semibold text-slate-500 hover:underline"
+            >
+              Clear
+            </button>
+          </div>
+        ) : (
+          <span />
+        )}
+
+        <div className="ml-auto inline-flex items-center rounded-lg border border-slate-200 p-0.5 text-[12px]">
+          {(["grid", "dense"] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => changeView(v)}
+              className={cn(
+                "rounded-md px-2.5 py-1 font-semibold capitalize transition",
+                view === v ? "bg-slate-900 text-white" : "text-slate-500 hover:text-slate-800",
+              )}
+            >
+              {v}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* Solid white card around the table (table-fixed + explicit column
-          widths so expanding a row never reflows the columns). */}
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white px-3">
-      <table className="w-full table-fixed text-[13px]">
-        <colgroup>
-          <col className="w-9" />
-          <col className="w-48" />
-          <col className="w-36" />
-          <col className="w-44" />
-          <col className="w-14" />
-          <col className="w-36" />
-          <col className="w-28" />
-          <col className="w-36" />
-        </colgroup>
-        <thead>
-          <tr className="border-b border-slate-200 text-left text-slate-500">
-            <th className="py-1.5">
-              <input
-                type="checkbox"
-                aria-label="Select all pending"
-                checked={allSelected}
-                onChange={toggleSelectAll}
-                className="h-3.5 w-3.5 cursor-pointer accent-emerald-700"
-              />
-            </th>
-            <th className="font-semibold">Date</th>
-            <th className="font-semibold">User</th>
-            <th className="font-semibold">Bank</th>
-            <th className="font-semibold">Type</th>
-            <th className="font-semibold text-right pr-6">Amount</th>
-            <th className="font-semibold">Status</th>
-            <th className="font-semibold">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const isOpen = openId === r.id;
-            return (
-              <Fragment key={r.id}>
-                <tr className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-1.5" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      aria-label={`Select entry ${r.customerName}`}
-                      checked={selected.has(r.id)}
-                      onChange={() => toggleSelect(r.id)}
-                      disabled={r.status !== "PENDING"}
-                      className="h-3.5 w-3.5 cursor-pointer accent-emerald-700 disabled:opacity-30"
-                    />
-                  </td>
-                  <td
-                    className="cursor-pointer whitespace-nowrap text-slate-600"
-                    onClick={() => expand(r.id)}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {isOpen ? (
-                        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+        <table className={cn("w-full table-fixed", grid ? "text-[12.5px]" : "text-[12px]")}>
+          <colgroup>
+            <col className="w-10" />
+            <col className="w-36" />
+            <col className="w-44" />
+            <col className="w-32" />
+            {/* Notes — absorbs the slack */}
+            <col />
+            <col className="w-40" />
+            <col className="w-28" />
+            <col className="w-32" />
+          </colgroup>
+          <thead>
+            <tr className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <th className={cn(headCell, "text-center")}>
+                <input
+                  type="checkbox"
+                  aria-label="Select all pending"
+                  checked={allSelected}
+                  onChange={toggleSelectAll}
+                  className="h-3.5 w-3.5 cursor-pointer accent-emerald-700 align-middle"
+                />
+              </th>
+              <th className={headCell}>Date</th>
+              <th className={headCell}>Bank</th>
+              <th className={cn(headCell, "text-right")}>Amount</th>
+              <th className={headCell}>Notes</th>
+              <th className={headCell}>User</th>
+              <th className={headCell}>Status</th>
+              <th className={cn(headCell, "text-right")}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const isOpen = openId === r.id;
+              const gave = r.direction === "CREDIT";
+              return (
+                <Fragment key={r.id}>
+                  <tr className="group hover:bg-slate-50/80">
+                    <td
+                      className={cn(cell, "text-center", !grid && cn("border-l-[3px]", statusAccent[r.status]))}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="checkbox"
+                        aria-label={`Select entry ${r.customerName}`}
+                        checked={selected.has(r.id)}
+                        onChange={() => toggleSelect(r.id)}
+                        disabled={r.status !== "PENDING"}
+                        className="h-3.5 w-3.5 cursor-pointer accent-emerald-700 align-middle disabled:opacity-30"
+                      />
+                    </td>
+
+                    {/* Date — leads the row; click (with the chevron) expands history */}
+                    <td
+                      className={cn(cell, "cursor-pointer whitespace-nowrap text-slate-500")}
+                      onClick={() => expand(r.id)}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        {isOpen ? (
+                          <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        )}
+                        {formatDateTimeIST(r.occurredAt)}
+                      </span>
+                    </td>
+
+                    <td className={cn(cell, "cursor-pointer")} onClick={() => expand(r.id)}>
+                      <span className="block truncate font-semibold text-slate-800">{r.customerName}</span>
+                    </td>
+
+                    {/* Amount — direction encoded by sign + color */}
+                    <td
+                      className={cn(
+                        cell,
+                        "whitespace-nowrap text-right font-semibold tabular-nums",
+                        grid ? "" : "font-mono",
+                        dirColor(r.direction),
                       )}
-                      {formatDateTimeIST(r.occurredAt)}
-                    </span>
-                  </td>
-                  <td className="max-w-[140px] cursor-pointer truncate" onClick={() => expand(r.id)}>
-                    {r.userLabel}
-                  </td>
-                  <td className="cursor-pointer align-top" onClick={() => expand(r.id)}>
-                    <div className="truncate font-semibold">{r.customerName}</div>
-                    {r.note && (
-                      <div className="truncate text-[11px] font-normal text-slate-500" title={r.note}>
-                        {r.note}
-                      </div>
-                    )}
-                  </td>
-                  <td className={`cursor-pointer ${dirColor(r.direction)}`} onClick={() => expand(r.id)}>
-                    {r.direction === "CREDIT" ? "gave" : "got"}
-                  </td>
-                  <td
-                    className={`cursor-pointer text-right font-semibold tabular-nums pr-6 ${dirColor(r.direction)}`}
-                    onClick={() => expand(r.id)}
-                  >
-                    {formatAbs(r.amount, r.currency)}
-                  </td>
-                  <td className="cursor-pointer" onClick={() => expand(r.id)}>
-                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${statusStyle[r.status]}`}>
-                      {r.status}
-                      {r.version > 1 ? ` · v${r.version}` : ""}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap text-right">
-                    <RowActions row={r} act={act} pending={busyId === r.id || bulkBusy} />
-                  </td>
-                </tr>
+                    >
+                      {gave ? "+" : "−"}
+                      {formatAbs(r.amount, r.currency)}
+                    </td>
 
-                {isOpen &&
-                  (versions[r.id] ? (
-                    versions[r.id].map((v) => (
-                      <tr
-                        key={`${r.id}-v${v.version}`}
-                        className="border-b border-slate-100 bg-slate-50/70 text-[12px] text-slate-600 animate-in fade-in-0 duration-200"
-                      >
-                        <td />
-                        <td className="whitespace-nowrap py-1 pl-5 text-slate-500">
-                          {formatDateTimeIST(v.validFrom)}
-                        </td>
-                        <td className="text-slate-500">
-                          <span className="font-bold">v{v.version}</span>
-                          <span className="ml-1 text-slate-500">{v.isAdmin ? "admin" : "user"}</span>
-                        </td>
-                        <td className="truncate text-slate-500" title={v.note ?? undefined}>
-                          {v.note || <span className="text-slate-300">—</span>}
-                        </td>
-                        <td className={dirColor(v.direction)}>
-                          {v.direction === "CREDIT" ? "gave" : "got"}
-                        </td>
-                        <td className={`text-right tabular-nums pr-6 ${dirColor(v.direction)}`}>
-                          {formatAbs(v.amount, v.currency)}
-                        </td>
-                        <td className="whitespace-nowrap">
-                          <span
-                            className={`rounded px-2 py-0.5 text-[11px] font-bold ${statusStyle[v.status]}`}
-                          >
-                            {v.status}
-                          </span>
-                          {!v.validTo && (
-                            <span className="ml-1 text-[10px] font-bold text-emerald-700">live</span>
-                          )}
-                        </td>
-                        <td className="text-right">
-                          <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">
-                            {v.changeType}
-                          </span>
+                    {/* Notes — dedicated column, truncated with full text on hover */}
+                    <td className={cell} title={r.note ?? undefined}>
+                      <span className={cn("block truncate", r.note ? "text-slate-600" : "text-slate-300")}>
+                        {r.note || "—"}
+                      </span>
+                    </td>
+
+                    <td className={cn(cell, "truncate text-slate-500")} title={r.userLabel}>
+                      {r.userLabel}
+                    </td>
+
+                    <td className={cell}>
+                      <span className={cn("rounded px-2 py-0.5 text-[11px] font-semibold", statusPill[r.status])}>
+                        {r.status.toLowerCase()}
+                        {r.version > 1 ? ` · v${r.version}` : ""}
+                      </span>
+                    </td>
+
+                    <td className={cn(cell, "whitespace-nowrap text-right")}>
+                      <RowActions row={r} act={act} pending={busyId === r.id || bulkBusy} />
+                    </td>
+                  </tr>
+
+                  {isOpen &&
+                    (versions[r.id] ? (
+                      versions[r.id].map((v) => (
+                        <tr
+                          key={`${r.id}-v${v.version}`}
+                          className="bg-slate-50/60 text-[11.5px] text-slate-500 animate-in fade-in-0 duration-200"
+                        >
+                          <td className={cell} />
+                          <td className={cn(cell, "whitespace-nowrap pl-7 text-slate-400")}>
+                            {formatDateTimeIST(v.validFrom)}
+                          </td>
+                          <td className={cell}>
+                            <span className="font-bold text-slate-600">v{v.version}</span>
+                            <span className="ml-1.5">{v.isAdmin ? "admin" : "user"}</span>
+                          </td>
+                          <td className={cn(cell, "whitespace-nowrap text-right tabular-nums", dirColor(v.direction))}>
+                            {v.direction === "CREDIT" ? "+" : "−"}
+                            {formatAbs(v.amount, v.currency)}
+                          </td>
+                          <td className={cell} title={v.note ?? undefined}>
+                            <span className="block truncate">{v.note || "—"}</span>
+                          </td>
+                          <td className={cn(cell, "text-slate-400")}>{v.changeType.toLowerCase()}</td>
+                          <td className={cell}>
+                            <span className={cn("rounded px-2 py-0.5 text-[11px] font-semibold", statusPill[v.status])}>
+                              {v.status.toLowerCase()}
+                            </span>
+                          </td>
+                          <td className={cn(cell, "text-right")}>
+                            {!v.validTo && (
+                              <span className="text-[10px] font-bold uppercase text-emerald-700">live</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr className="bg-slate-50/60 animate-in fade-in-0 duration-200">
+                        <td className={cell} />
+                        <td className={cn(cell, "pl-7 text-slate-400")} colSpan={7}>
+                          Loading history…
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr className="bg-slate-50/70 animate-in fade-in-0 duration-200">
-                      <td />
-                      <td colSpan={7} className="px-3 py-2 text-[12px] text-slate-500">
-                        Loading history…
-                      </td>
-                    </tr>
-                  ))}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </table>
+                    ))}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
@@ -302,14 +360,12 @@ function RowActions({
     act(fn, row.id, label);
   };
 
-  // primary inline action + the items shown in the overflow menu.
-  // Only PENDING entries can be approved.
   const primary =
     row.status === "PENDING"
       ? { label: "Approve", fn: approveEntry, toast: "Approved" }
       : row.status === "ARCHIVED"
         ? { label: "Restore", fn: unarchiveEntry, toast: "Restored" }
-        : null; // APPROVED / REJECTED have no inline primary
+        : null;
 
   const menu: { label: string; fn: ActFn; toast: string; danger?: boolean }[] = [];
   if (row.status === "PENDING" || row.status === "APPROVED")
@@ -324,7 +380,7 @@ function RowActions({
           type="button"
           disabled={pending}
           onClick={() => run(primary.fn, primary.toast)}
-          className="rounded-md bg-emerald-700 px-2.5 py-1.5 text-[12px] font-semibold text-white disabled:opacity-50"
+          className="rounded-md border border-emerald-600 px-2.5 py-1 text-[12px] font-semibold text-emerald-700 transition hover:bg-emerald-600 hover:text-white disabled:opacity-50"
         >
           {primary.label}
         </button>

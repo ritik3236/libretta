@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "./DatePicker";
 import { TransactionRow } from "./TransactionRow";
+import { usePendingEntries } from "@/components/providers/PendingEntriesProvider";
 import { cn } from "@/lib/utils";
 
 type Tx = {
@@ -21,6 +22,16 @@ type Tx = {
   occurredAt: Date;
   status: "PENDING" | "APPROVED" | "REJECTED" | "ARCHIVED";
 };
+
+// Identifies an entry by its content, so an optimistic temp row can be matched
+// to the real saved entry once a refresh brings it back from the server.
+const contentKey = (e: {
+  customerId: string;
+  direction: string;
+  amount: number;
+  occurredAt: Date;
+  note: string | null;
+}) => `${e.customerId}|${e.direction}|${e.amount}|${e.occurredAt.getTime()}|${e.note ?? ""}`;
 
 type TypeFilter = "ALL" | "CREDIT" | "DEBIT";
 
@@ -47,10 +58,23 @@ export function TransactionsSection({
   const [to, setTo] = useState<Date | null>(null);
   const [bankOpen, setBankOpen] = useState(false);
 
+  const pendingEntries = usePendingEntries();
+  const pending = pendingEntries?.pending;
+
+  // Optimistic rows added from the global sheet, surfaced at the top until the
+  // server confirms them. Drop any temp already reflected in the server list so
+  // a refresh never shows a duplicate.
+  const merged = useMemo(() => {
+    if (!pending || pending.length === 0) return entries;
+    const serverKeys = new Set(entries.map(contentKey));
+    const fresh = pending.filter((p) => !serverKeys.has(contentKey(p)));
+    return fresh.length ? [...fresh, ...entries] : entries;
+  }, [entries, pending]);
+
   const filtered = useMemo(() => {
     const fromTs = from ? startOfDay(from).getTime() : null;
     const toTs = to ? endOfDay(to).getTime() : null;
-    return entries.filter((e) => {
+    return merged.filter((e) => {
       if (type !== "ALL" && e.direction !== type) return false;
       if (currency !== "ALL" && e.currency !== currency) return false;
       if (customerIds.length > 0 && !customerIds.includes(e.customerId)) return false;
@@ -59,7 +83,7 @@ export function TransactionsSection({
       if (toTs !== null && ts > toTs) return false;
       return true;
     });
-  }, [entries, type, currency, customerIds, from, to]);
+  }, [merged, type, currency, customerIds, from, to]);
 
   const activeCount =
     (type !== "ALL" ? 1 : 0) +

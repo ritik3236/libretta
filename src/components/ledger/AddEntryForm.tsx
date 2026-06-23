@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { createEntry } from "@/server/actions/entries";
 import { istInputToUTC } from "@/lib/datetime";
 import { getCurrencyMeta } from "@/lib/currency";
-import { groupAmountInput } from "@/lib/money";
+import { groupAmountInput, toMinor } from "@/lib/money";
+import { usePendingEntries } from "@/components/providers/PendingEntriesProvider";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { NumberPad } from "@/components/ledger/NumberPad";
@@ -34,6 +35,7 @@ export function AddEntryForm({
   onDone?: () => void;
 }) {
   const router = useRouter();
+  const pendingEntries = usePendingEntries();
   const [pending, startTransition] = useTransition();
 
   const [customerId, setCustomerId] = useState(
@@ -72,9 +74,25 @@ export function AddEntryForm({
       occurredAt: istInputToUTC(date),
     };
 
-    // Inside a sheet (FAB): close instantly and save in the background so the
-    // user never waits on the round-trip. Toast + refresh once it resolves.
+    // Inside a sheet (FAB / sidebar): close instantly and save in the background
+    // so the user never waits on the round-trip. Surface an optimistic row on the
+    // dashboard list right away (mirroring the bank ledger), then toast + refresh
+    // once it resolves — the refresh reconciles the temp row with the real entry.
     if (onDone) {
+      const tmpId = `tmp-${crypto.randomUUID()}`;
+      if (selected) {
+        pendingEntries?.addPending({
+          id: tmpId,
+          customerId,
+          customerName: selected.name,
+          direction,
+          amount: toMinor(payload.amount, selected.currency),
+          currency: selected.currency,
+          note: note || null,
+          occurredAt: payload.occurredAt,
+          status: "PENDING",
+        });
+      }
       onDone();
       createEntry(payload)
         .then((res) => {
@@ -83,9 +101,16 @@ export function AddEntryForm({
             router.refresh();
           } else {
             toast.error(res.error);
+            pendingEntries?.removePending(tmpId);
           }
         })
-        .catch(() => toast.error("Couldn't save entry — please retry."));
+        .catch(() => {
+          toast.error("Couldn't save entry — please retry.");
+          pendingEntries?.removePending(tmpId);
+        });
+      // Safety net: drop the optimistic row once the refresh has had time to land
+      // (or if the entry is backdated out of the recent window and never matches).
+      setTimeout(() => pendingEntries?.removePending(tmpId), 4000);
       return;
     }
 

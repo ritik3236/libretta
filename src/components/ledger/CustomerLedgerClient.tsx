@@ -1,9 +1,9 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useCallback, useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { ArrowUpRight, ArrowDownLeft } from "lucide-react";
-import { createEntry } from "@/server/actions/entries";
+import { createEntry, loadMoreEntries } from "@/server/actions/entries";
 import { istInputToUTC } from "@/lib/datetime";
 import { CountUp } from "./CountUp";
 import { EntriesList } from "./EntriesList";
@@ -46,14 +46,47 @@ export function CustomerLedgerClient({
   entries,
   totalGave: serverGave,
   totalGot: serverGot,
+  initialCursor,
+  initialHasMore,
 }: {
   customer: Customer;
   entries: Entry[];
   totalGave: number;
   totalGot: number;
+  initialCursor: string | null;
+  initialHasMore: boolean;
 }) {
+  // Base list = server first page + any infinite-scroll pages. Resets whenever
+  // the server sends fresh props (navigation, or revalidation after a save).
+  const [baseEntries, setBaseEntries] = useState(entries);
+  const [cursor, setCursor] = useState(initialCursor);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadingMore, startLoadMore] = useTransition();
+  const loadingRef = useRef(false);
+
+  useEffect(() => {
+    setBaseEntries(entries);
+    setCursor(initialCursor);
+    setHasMore(initialHasMore);
+  }, [entries, initialCursor, initialHasMore]);
+
+  const loadMore = useCallback(() => {
+    if (loadingRef.current || !hasMore || !cursor) return;
+    loadingRef.current = true;
+    startLoadMore(async () => {
+      try {
+        const page = await loadMoreEntries(customer.id, cursor);
+        setBaseEntries((prev) => [...prev, ...page.entries]);
+        setCursor(page.nextCursor);
+        setHasMore(page.hasMore);
+      } finally {
+        loadingRef.current = false;
+      }
+    });
+  }, [hasMore, cursor, customer.id]);
+
   const [optimistic, addOptimistic] = useOptimistic(
-    { balance: customer.balance, totalGave: serverGave, totalGot: serverGot, entries },
+    { balance: customer.balance, totalGave: serverGave, totalGot: serverGot, entries: baseEntries },
     reducer,
   );
 
@@ -151,7 +184,12 @@ export function CustomerLedgerClient({
             </p>
           </div>
         ) : (
-          <EntriesList entries={optimistic.entries} />
+          <EntriesList
+            entries={optimistic.entries}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMore}
+          />
         )}
       </section>
 

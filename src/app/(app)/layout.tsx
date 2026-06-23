@@ -2,6 +2,7 @@ import { requireUser } from "@/server/auth";
 import { listCustomers } from "@/server/queries/customers";
 import { getCurrencies } from "@/server/queries/currencies";
 import { CurrencyProvider } from "@/components/providers/CurrencyProvider";
+import { PendingEntriesProvider } from "@/components/providers/PendingEntriesProvider";
 import { BottomNav } from "@/components/nav/BottomNav";
 import { SideNav } from "@/components/nav/SideNav";
 import { AddEntryFab } from "@/components/nav/AddEntryFab";
@@ -22,14 +23,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <CurrencyProvider currencies={currencies}>
-      <div className="app-shell bg-white">
-        <SideNav customers={customerOpts} />
-        <div className="min-w-0">
-          <div className="min-h-dvh pb-28 md:pb-10">{children}</div>
+      <PendingEntriesProvider>
+        <div className="app-shell bg-white">
+          <SideNav customers={customerOpts} />
+          <div className="min-w-0">
+            <div className="min-h-dvh pb-28 md:pb-10">{children}</div>
+          </div>
+          <AddEntryFab customers={customerOpts} />
+          <BottomNav />
         </div>
-        <AddEntryFab customers={customerOpts} />
-        <BottomNav />
-      </div>
+      </PendingEntriesProvider>
     </CurrencyProvider>
   );
 }

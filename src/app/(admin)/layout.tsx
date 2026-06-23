@@ -25,7 +25,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <AdminSidebarFooter name={accountName} email={account.email} />
         </aside>
         <main className="min-w-0 p-5">
-          <div className="mx-auto max-w-6xl">{children}</div>
+          <div className="mx-auto max-w-none">{children}</div>
         </main>
       </div>
     </CurrencyProvider>

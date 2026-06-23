@@ -5,6 +5,7 @@ import { EntryStatus } from "@prisma/client";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth";
 import { getCurrencies } from "@/server/queries/currencies";
+import { loadCustomerEntries, type EntryPage } from "@/server/queries/customers";
 import { entrySchema, entryUpdateSchema } from "@/lib/validators";
 import { toMinor } from "@/lib/money";
 import { writeEntryVersion, signedDelta } from "@/server/versioning";
@@ -185,4 +186,14 @@ export async function deleteEntry(id: string): Promise<ActionResult> {
 
   revalidateEntryPaths(entry.customerId);
   return { ok: true, id };
+}
+
+/**
+ * Fetches the next page of a customer's ledger entries for infinite scroll.
+ * `requireUser` + the userId filter in {@link loadCustomerEntries} keep a user
+ * from reading another's entries.
+ */
+export async function loadMoreEntries(customerId: string, cursor: string): Promise<EntryPage> {
+  const userId = await requireUser();
+  return loadCustomerEntries(userId, customerId, cursor);
 }

@@ -61,17 +61,70 @@ export type EntryView = {
   status: EntryStatus;
 };
 
+export type EntryPage = {
+  entries: EntryView[];
+  nextCursor: string | null;
+  hasMore: boolean;
+};
+
+// Ledgers can hold thousands of entries; load them a page at a time instead of
+// streaming the whole table to the client. Totals come from a separate aggregate
+// so they always reflect ALL entries, not just the loaded page.
+const ENTRIES_PAGE_SIZE = 40;
+
+function toEntryView(e: {
+  id: string;
+  direction: "CREDIT" | "DEBIT";
+  amountMinor: bigint;
+  currency: string;
+  note: string | null;
+  occurredAt: Date;
+  status: EntryStatus;
+}): EntryView {
+  return {
+    id: e.id,
+    direction: e.direction,
+    amount: Number(e.amountMinor),
+    currency: e.currency,
+    note: e.note,
+    occurredAt: e.occurredAt,
+    status: e.status,
+  };
+}
+
+/**
+ * One page of a customer's entries, newest first. Cursor-paginated by id with a
+ * compound (occurredAt desc, id desc) order so the cursor is stable even when
+ * entries share an occurredAt. Ownership is enforced via the userId filter.
+ */
+export async function loadCustomerEntries(
+  userId: string,
+  customerId: string,
+  cursor?: string | null,
+): Promise<EntryPage> {
+  const rows = await prisma.entry.findMany({
+    where: { customerId, userId, ...NOT_ARCHIVED },
+    orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+    take: ENTRIES_PAGE_SIZE + 1, // over-fetch one to detect a next page
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+  });
+  const hasMore = rows.length > ENTRIES_PAGE_SIZE;
+  const page = hasMore ? rows.slice(0, ENTRIES_PAGE_SIZE) : rows;
+  return {
+    entries: page.map(toEntryView),
+    nextCursor: hasMore ? page[page.length - 1]!.id : null,
+    hasMore,
+  };
+}
+
 export async function getCustomer(userId: string, id: string) {
   const customer = await prisma.customer.findFirst({
     where: { id, userId },
   });
   if (!customer) return null;
 
-  const [entries, grouped] = await Promise.all([
-    prisma.entry.findMany({
-      where: { customerId: id, userId, ...NOT_ARCHIVED },
-      orderBy: { occurredAt: "desc" },
-    }),
+  const [page, grouped] = await Promise.all([
+    loadCustomerEntries(userId, id),
     // Server-side aggregate so totals reflect ALL non-archived entries, not just rendered rows.
     prisma.entry.groupBy({
       by: ["direction"],
@@ -92,14 +145,8 @@ export async function getCustomer(userId: string, id: string) {
     ...toView(customer),
     totalGave,
     totalGot,
-    entries: entries.map<EntryView>((e) => ({
-      id: e.id,
-      direction: e.direction,
-      amount: Number(e.amountMinor),
-      currency: e.currency,
-      note: e.note,
-      occurredAt: e.occurredAt,
-      status: e.status,
-    })),
+    entries: page.entries,
+    nextCursor: page.nextCursor,
+    hasMore: page.hasMore,
   };
 }
